@@ -129,10 +129,10 @@ confusion_knn_3 = confusion_misclass(data = heart.test, model = knn_output_3,
 confusion_knn_3
 ```
 
-Confusion matrix for knn full, k = 3
+### Confusion matrix for knn full, k = 3
 ![](images/knn_full_n.png)
 
-Confusion matrix for knn full, k = 3
+### Confusion matrix for knn full, k = 3
 ![](images/knn_full_3.png)
 
 ## kNN: Without Medical 
@@ -156,10 +156,10 @@ confusion_knn_med_3 = confusion_misclass(data = heart.test.adj.2, model = knn_ou
 confusion_knn_med_3
 ```
 
-Confusion matrix for knn no medical, k = n
+### Confusion matrix for knn no medical, k = n
 ![](images/knn_nomedical_n.png)
 
-Confusion matrix for knn no medical, k = 3
+### Confusion matrix for knn no medical, k = 3
 ![](images/knn_nomedical_3.png)
 
 ## Table
@@ -186,6 +186,8 @@ confusion_misclass_no_med = confusion_misclass(data = heart.test.no.med, model =
 confusion_misclass_no_med
 ```
 
+### Confusion matrix for the full logistic regression model
+![](images/log_full.png)
 
 ```{r, eval=FALSE}
 library(kableExtra)
@@ -201,7 +203,7 @@ misclass.rate.df %>%
 #%>% save_kable(file = "misclasstable.png")
 ```
 
-Table of the misclassification rates by all models
+### Table of the misclassification rates by all models
 ![](images/misclassrate.png)
 
 When running the kNN algorithm (with k=3) using all of the predictors, we had a misclassification rate of 0.0415. The kNN algorithm (with k=3) without the predictors for prior medical conditions, resulted in a smaller misclassification rate of 0.0339. However, the logistic regression using all of the predictors had a misclassification rate of 0.0833 and the logistic regression not using the predictors for prior medical conditions had a misclassification rate of 0.0861. Lastly, the logistic regression which only used the predictors for prior medical conditions had a misclassification rate of 0.0852.

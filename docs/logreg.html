@@ -274,7 +274,9 @@ $(document).ready(function () {
 </div>
 
 
-<p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD ## Full Model</p>
+<div id="full-model" class="section level2">
+<h2>Full Model</h2>
+</div>
 <div id="males-removed" class="section level2">
 <h2>Males removed</h2>
 </div>
@@ -296,11 +298,12 @@ $(document).ready(function () {
 <div id="roc-curve" class="section level2">
 <h2>ROC Curve</h2>
 <pre class="r"><code>library(ROCR)
-pred = predict(log.reg.full,heart.test, type = &quot;response&quot;)
+pred = predict(logreg_full,heart.test, type = &quot;response&quot;)
 pred2 = prediction(pred, heart.test$HeartDisease)
 roc = performance(pred2, &quot;tpr&quot;, &quot;fpr&quot;)
 plot(roc, colorize = T, lwd = 2)
 title(&quot;ROC Curve&quot;)</code></pre>
+<p><img src="logreg_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
 </div>
 
 

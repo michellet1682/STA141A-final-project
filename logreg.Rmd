@@ -7,7 +7,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-<<<<<<< HEAD
 ## Full Model
 ```{r, echo=FALSE, eval=FALSE}
 log.reg.full <- glm(HeartDisease ~ .-1, data = heart.training, family = "binomial")
@@ -187,9 +186,9 @@ confusion_misclass(non.stroke.test.df,log.reg.non.stroke, conf_mat = T)
 ```
 
 ## ROC Curve
-```{r, eval=FALSE}
+```{r}
 library(ROCR)
-pred = predict(log.reg.full,heart.test, type = "response")
+pred = predict(logreg_full,heart.test, type = "response")
 pred2 = prediction(pred, heart.test$HeartDisease)
 roc = performance(pred2, "tpr", "fpr")
 plot(roc, colorize = T, lwd = 2)
