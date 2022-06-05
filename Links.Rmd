@@ -1,19 +1,106 @@
 ---
-title: "Resources"
-output: html_document
+title: "kNN"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    collapsed: false
+    number_sections: false
+    toc_depth: 1
 ---
 
-### R and R-Studio
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message=FALSE,warning=FALSE, cache=TRUE)
+```
 
-[R](http://www.r-project.org) is a free open-source programming language that can be used for statistical analysis, data-simulation, graphing, and lots of other stuff. Another free program is [R-studio](http://www.rstudio.com), that provides a nice graphic interface for R. Download R first, then download R-studio. Both can run on PCs, Macs or Linux. Students will be learning R in the stats labs using the lab manual []().
+## kNN: k optimization
+```{r, echo=FALSE}
+library(class)
+knn_k_misclass = function(k_test){
+  knn_output = knn(train = heart.training.adj, test = heart.test.adj, 
+                 cl = heart.training.adj$HeartDisease, k = k_test, use.all = T)
+  confusion_knn = t(table(knn_output, heart.test$HeartDisease, dnn = c("Predicted","True")))
+  misclassification_rate_knn = 1 - (sum(diag(confusion_knn)) / sum(confusion_knn))
+  return(misclassification_rate_knn)
+}
+min_misclass_rate = Inf
+misclass_rates = numeric()
+optimal_k = NULL
+start_time = proc.time()
+for(i in 1:ceiling(n)){
+  cur_misclass_rate = knn_k_misclass(i)
+  misclass_rates[i] = cur_misclass_rate
+  if(cur_misclass_rate < min_misclass_rate){
+    min_misclass_rate = cur_misclass_rate
+    optimal_k = i
+  }
+}
+optimal_k
+```
 
-### Additional R resources
+To determine what the optimal k value to use for our kNN algorithms is, we ran an exhaustive search to compare the misclassification rates of ks from 1 to 277. By doing so, we found the optimal k value for our data to be k=3, which resulted in a misclassification rate of 0.0529. This rate is noticeably lower when compared to the misclassifcation rate when using the general practice k value of sqrt(n)/2 = 275.5 which was 0.0852. Thus, we find that the general practice k has worse performance than the optimal k. Therefore, if using an algorithm that can find the optimal k efficiently, doing so is recommended over using the simpler general practice k value.
 
-1. Google is great, Google your problem
-2. [Stackoverflow](https://stackoverflow.com) is great, google will often take you there because someone has already asked your question, and someone else has answered, usually many people have answered your question many ways.
-3. Danielle Navarro wrote a [free Psych Stats textbook using R](https://compcogscisydney.org/learning-statistics-with-r/), it's worth checking out (some of our textbook are based on Danielle's)
-4. I am currently writing another stats textbook (incorporating some of the above). You can read it while it's being made right here [https://crumplab.github.io/statistics/](https://crumplab.github.io/statistics/), also check out the lab manual for more specific things about doing various stats in R (also in draft right now) [https://crumplab.github.io/statisticsLab/](https://crumplab.github.io/statisticsLab/)
-5. Daniell Navarro recently made this website for introducing R, it's great, check it out (also made using this R markdown process): [http://compcogscisydney.org/psyr/](http://compcogscisydney.org/psyr/)
-6. Check out my slightly older programming book that also introduces R [https://crumplab.github.io/programmingforpsych/](https://crumplab.github.io/programmingforpsych/)
-7. This is the definitive guide for all things R Markdown (you will find this very useful as you get better at this skill): [https://bookdown.org/yihui/rmarkdown/](https://bookdown.org/yihui/rmarkdown/)
+## kNN: Full
+```{r, include=FALSE}
+library(class)
+heart.test.adj = heart.test
+heart.training.adj = heart.training
+indx.test = sapply(heart.test.adj, is.factor)
+heart.test.adj[indx.test] = lapply(heart.test.adj[indx.test], FUN=as.numeric)
+indx.training = sapply(heart.training.adj, is.factor)
+heart.training.adj[indx.training] = lapply(heart.training.adj[indx.training], FUN=as.numeric)
+### General Practice: k = sqrt(n) / 2
+n = sqrt(nrow(heart.training)) / 2
+knn_output_n = knn(train = heart.training.adj, test = heart.test.adj, 
+                 cl = heart.training.adj$HeartDisease, k = n, use.all = T)
+confusion_knn_n = confusion_misclass(data = heart.test, model = knn_output_n, 
+                                     knn = T, conf_mat = T)
+confusion_knn_n
+### Optimal k: k = 3
+knn_output_3 = knn(train = heart.training.adj, test = heart.test.adj, 
+                 cl = heart.training.adj$HeartDisease, k = 3, use.all = T)
+confusion_knn_3 = confusion_misclass(data = heart.test, model = knn_output_3, 
+                                     knn = T, conf_mat = T)
+confusion_knn_3
+```
 
+## kNN: Without Medical 
+```{r, include=FALSE}
+med_ind = c(5, 12, 16, 17, 18)
+heart.test.adj.2 = heart.test.adj[-med_ind]
+heart.training.adj.2 = heart.training.adj[-med_ind]
+### General Practice: k = sqrt(n) / 2
+n = sqrt(nrow(heart.training)) / 2
+knn_output_med_n = knn(train = heart.training.adj.2, 
+                       test = heart.test.adj.2, 
+                       cl = heart.training.adj.2$HeartDisease, k = n, use.all = T)
+confusion_knn_med_n = confusion_misclass(data = heart.test.adj.2, model = knn_output_med_n, 
+                                         conf_mat = T, knn = T)
+confusion_knn_med_n
+### Optimal k: k = 3
+knn_output_med_3 = knn(train = heart.training.adj.2, test = heart.test.adj.2, 
+                 cl = heart.training.adj$HeartDisease, k = 3, use.all = T)
+confusion_knn_med_3 = confusion_misclass(data = heart.test.adj.2, model = knn_output_med_3,
+                                         conf_mat = T, knn=T)
+confusion_knn_med_3
+```
+
+## Table
+```{r}
+library(kableExtra)
+tests = c("kNN: Full", "kNN: w/o Medical", 
+                      "LogReg: Full", "LogReg: w/o Medical", "LogReg: Only Medical")
+miss.rates = c(confusion_knn_3[[2]], confusion_knn_med_3[[2]], confusion_full[[2]], 
+               confusion_misclass_no_med[[1]], confusion_misclass_med[[1]])
+misclass.rate.df = data.frame(Model = tests, 
+                              Misclassification_Rates = miss.rates)
+misclass.rate.df %>% 
+  kbl(caption = "Misclassification Rate by Model") %>% 
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+To determine what impacts prior medical conditions and diseases have on whether a person will be predicted to develop heart disease, we will be comparing the misclassification rates of several different algorithms and models. We will be comparing the results of a kNN algorithm that uses all predictors and a kNN algorithm that uses all predictors except the predictors for prior medical conditions. Additionally, we will be comparing the results of a logistic regression using all of the predictors, a logistic regression using all of the predictors except the predictors for prior medical conditions, and a logistic regression using only the predictors for prior medical conditions. We will not be using a kNN algorithm based on only the predictors for prior medical conditions because due to the low number of factors and large sample size, this results in there being far too many ties (each possible observation will have ~5000 ties) so the kNN algorithm will not be usable.
+
+When running the kNN algorithm (with k=3) using all of the predictors, we had a misclassification rate of 0.0415. The kNN algorithm (with k=3) without the predictors for prior medical conditions, resulted in a smaller misclassification rate of 0.0339. However, the logistic regression using all of the predictors had a misclassification rate of 0.0833 and the logistic regression not using the predictors for prior medical conditions had a misclassification rate of 0.0861. Lastly, the logistic regression which only used the predictors for prior medical conditions had a misclassification rate of 0.0852.
+
+Based on these results, we see that the exclusion of the predictors for prior medical conditions decreased the misclassification rate when using kNN, but increased the misclassification rate when using logitistic regression. However, since these differences were so slight (<0.01), we conclude that the exclusion of prior medical conditions had no siginificant effect on the effectiveness of the algorithms and models. However, we can also see that the logistic regression model that only considered prior medical conditions had a misclassification rate only 0.0019 larger than the full model. Thus, we find that a model that only uses prior medical conditions is almost as effective, if not as effective as the full model. Therefore, we conclude that prior medical conditions have a significant impact on whether an individual may develop heart disease.
