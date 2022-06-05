@@ -6,6 +6,8 @@ navbar:
       href: index.html
     - text: "Journal"
       href: Journal.html
-    - text: "Links"
+    - text: "Logistic Regression"
+      href: logreg.html
+    - text: "kNN"
       href: Links.html
 output_dir: "docs"
