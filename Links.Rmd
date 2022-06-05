@@ -2,11 +2,8 @@
 title: "kNN"
 output: 
   html_document:
-    toc: true
-    toc_float: true
-    collapsed: false
-    number_sections: false
-    toc_depth: 1
+    toc: TRUE
+    toc_float: TRUE
 ---
 
 ```{r setup, include=FALSE}
@@ -14,11 +11,36 @@ knitr::opts_chunk$set(message=FALSE,warning=FALSE, cache=TRUE)
 ```
 
 ## kNN: k optimization
-```{r, echo=FALSE}
+
+```{r, include=FALSE}
+### Create test and training sets
+library(readr)
+heart.df = read.csv("~/R/STA 141A/heart_2020.csv", header = T, stringsAsFactors = T)
+
+heart.df.split = split(heart.df, heart.df$HeartDisease)
+perc.of.data = 0.05
+prop = nrow(heart.df.split$No) / nrow(heart.df)
+val = floor(perc.of.data * nrow(heart.df))
+x = floor(prop * val)
+y = val - x
+set.seed(1)
+No.x = sample(1:nrow(heart.df.split$No), size =  x, replace = F)
+Yes.y = sample((1:nrow(heart.df.split$Yes))[-(No.x)], size = y, replace=F)
+heart.test = rbind(heart.df.split$No[No.x,], heart.df.split$Yes[Yes.y,])
+heart.training = rbind(heart.df.split$No[-No.x,], heart.df.split$Yes[-Yes.y,])
+```
+
+This is the function for calculating the optimal k to use. Due to the long computing time (about 5 hours thanks to Connor), there will be no output shown here. The computed optimal is k = 3.
+
+```{r, eval=FALSE}
 library(class)
 knn_k_misclass = function(k_test){
-  knn_output = knn(train = heart.training.adj, test = heart.test.adj, 
-                 cl = heart.training.adj$HeartDisease, k = k_test, use.all = T)
+  knn_output = knn(train = heart.training.adj, test = heart.test.adj,
+
+library(class)
+knn_k_misclass = function(k_test){
+  knn_output = knn(train = heart.training.adj, test = heart.test.adj,  
+                   cl = heart.training.adj$HeartDisease, k = k_test, use.all = T)
   confusion_knn = t(table(knn_output, heart.test$HeartDisease, dnn = c("Predicted","True")))
   misclassification_rate_knn = 1 - (sum(diag(confusion_knn)) / sum(confusion_knn))
   return(misclassification_rate_knn)
@@ -27,6 +49,9 @@ min_misclass_rate = Inf
 misclass_rates = numeric()
 optimal_k = NULL
 start_time = proc.time()
+
+n=sqrt(nrow(heart.training))/2
+
 for(i in 1:ceiling(n)){
   cur_misclass_rate = knn_k_misclass(i)
   misclass_rates[i] = cur_misclass_rate
@@ -40,8 +65,46 @@ optimal_k
 
 To determine what the optimal k value to use for our kNN algorithms is, we ran an exhaustive search to compare the misclassification rates of ks from 1 to 277. By doing so, we found the optimal k value for our data to be k=3, which resulted in a misclassification rate of 0.0529. This rate is noticeably lower when compared to the misclassifcation rate when using the general practice k value of sqrt(n)/2 = 275.5 which was 0.0852. Thus, we find that the general practice k has worse performance than the optimal k. Therefore, if using an algorithm that can find the optimal k efficiently, doing so is recommended over using the simpler general practice k value.
 
+
+## Confusion Misclassification Function
+```{r, eval=FALSE}
+confusion_misclass = function(data, model, conf_mat = F, err_rate = T, threshold = 0.5, knn=F){
+  if(knn == F){
+    prob = predict(model, newdata = data, type = "response")
+    predicted = ifelse(prob > threshold, "Yes", "No")
+
+    confusion = table(predicted, as.character(data$HeartDisease),
+                      dnn = c("Predicted","True"))
+
+    misclassification_rate = 1 - (sum(diag(confusion)) / sum(confusion))
+
+    confusion = t(confusion)
+    
+  } else {
+    confusion = t(table(model, data$HeartDisease, dnn = c("Predicted","True")))
+    colnames(confusion) = c("No", "Yes")
+    misclassification_rate = 1 - (sum(diag(confusion)) / sum(confusion))
+    
+  }
+
+  result = list()
+  
+  if(conf_mat == T){
+    result$Confusion_Matrix = confusion
+  }
+  
+  if(err_rate == T){
+    result$Misclassification_Rate = misclassification_rate
+  }
+  
+  return(result)
+}
+```
+
+
 ## kNN: Full
-```{r, include=FALSE}
+```{r, echo=FALSE, eval=FALSE}
+## kNN: Full
 library(class)
 heart.test.adj = heart.test
 heart.training.adj = heart.training
@@ -63,9 +126,11 @@ confusion_knn_3 = confusion_misclass(data = heart.test, model = knn_output_3,
                                      knn = T, conf_mat = T)
 confusion_knn_3
 ```
+![](images/knn_full_3.png)
 
 ## kNN: Without Medical 
-```{r, include=FALSE}
+<<<<<<< HEAD
+```{r, echo=FALSE, eval=FALSE}
 med_ind = c(5, 12, 16, 17, 18)
 heart.test.adj.2 = heart.test.adj[-med_ind]
 heart.training.adj.2 = heart.training.adj[-med_ind]
@@ -86,7 +151,33 @@ confusion_knn_med_3
 ```
 
 ## Table
-```{r}
+<<<<<<< HEAD
+
+To determine what impacts prior medical conditions and diseases have on whether a person will be predicted to develop heart disease, we will be comparing the misclassification rates of several different algorithms and models. We will be comparing the results of a kNN algorithm that uses all predictors and a kNN algorithm that uses all predictors except the predictors for prior medical conditions. Additionally, we will be comparing the results of a logistic regression using all of the predictors, a logistic regression using all of the predictors except the predictors for prior medical conditions, and a logistic regression using only the predictors for prior medical conditions. We will not be using a kNN algorithm based on only the predictors for prior medical conditions because due to the low number of factors and large sample size, this results in there being far too many ties (each possible observation will have ~5000 ties) so the kNN algorithm will not be usable.
+
+```{r, echo=FALSE, eval=FALSE}
+#full log model
+logreg_full = glm(HeartDisease~., data=heart.training, family = "binomial")
+confusion_full = confusion_misclass(data = heart.test, model = logreg_full, conf_mat = T)
+confusion_full
+
+#log model medical only
+logreg_only_med = glm(HeartDisease~Stroke+Diabetic+Asthma+KidneyDisease+SkinCancer,
+                      data=heart.training, family = "binomial")
+confusion_misclass_med = confusion_misclass(data = heart.test, model = logreg_only_med)
+confusion_misclass_med
+
+#log model without medical
+heart.test.no.med = heart.test[-med_ind]
+heart.training.no.med = heart.training[-med_ind]
+logreg_no_med = glm(HeartDisease~.,
+                      data=heart.training.no.med, family = "binomial")
+confusion_misclass_no_med = confusion_misclass(data = heart.test.no.med, model = logreg_no_med)
+confusion_misclass_no_med
+```
+
+
+```{r, eval=FALSE}
 library(kableExtra)
 tests = c("kNN: Full", "kNN: w/o Medical", 
                       "LogReg: Full", "LogReg: w/o Medical", "LogReg: Only Medical")
@@ -96,10 +187,9 @@ misclass.rate.df = data.frame(Model = tests,
                               Misclassification_Rates = miss.rates)
 misclass.rate.df %>% 
   kbl(caption = "Misclassification Rate by Model") %>% 
-  kable_classic(full_width = F, html_font = "Cambria")
+  kable_classic(full_width = F, html_font = "Cambria") 
+#%>% save_kable(file = "misclasstable.png")
 ```
-
-To determine what impacts prior medical conditions and diseases have on whether a person will be predicted to develop heart disease, we will be comparing the misclassification rates of several different algorithms and models. We will be comparing the results of a kNN algorithm that uses all predictors and a kNN algorithm that uses all predictors except the predictors for prior medical conditions. Additionally, we will be comparing the results of a logistic regression using all of the predictors, a logistic regression using all of the predictors except the predictors for prior medical conditions, and a logistic regression using only the predictors for prior medical conditions. We will not be using a kNN algorithm based on only the predictors for prior medical conditions because due to the low number of factors and large sample size, this results in there being far too many ties (each possible observation will have ~5000 ties) so the kNN algorithm will not be usable.
 
 When running the kNN algorithm (with k=3) using all of the predictors, we had a misclassification rate of 0.0415. The kNN algorithm (with k=3) without the predictors for prior medical conditions, resulted in a smaller misclassification rate of 0.0339. However, the logistic regression using all of the predictors had a misclassification rate of 0.0833 and the logistic regression not using the predictors for prior medical conditions had a misclassification rate of 0.0861. Lastly, the logistic regression which only used the predictors for prior medical conditions had a misclassification rate of 0.0852.
 

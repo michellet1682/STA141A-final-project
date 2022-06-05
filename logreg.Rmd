@@ -7,22 +7,191 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+<<<<<<< HEAD
+## Full Model
+```{r, echo=FALSE, eval=FALSE}
+log.reg.full <- glm(HeartDisease ~ .-1, data = heart.training, family = "binomial")
+summary(log.reg.full)
+anova.full <- anova(log.reg.full, test='Chisq')
+AIC(log.reg.full)
+BIC(log.reg.full)
+confusion_misclass(heart.test,log.reg.full, conf_mat = T)
 ```
 
-## Including Plots
+## Males removed
+```{r, echo=FALSE, eval=FALSE}
+male.indexes.training <- c()
+male.indexes.test <- c()
+for ( i in 1:nrow(heart.training)){
+  if(heart.training[i,9]== "Male"){
+    male.indexes.training <- append(male.indexes.training,i)
+  }
+}
+for ( i in 1:nrow(heart.test)){
+  if(heart.test[i,9]== "Male"){
+    male.indexes.test <- append(male.indexes.test,i)
+  }
+}
+no.male.training.df <- heart.df[-male.indexes.training,]
+no.male.training.df <- no.male.training.df[,-c(9)]
+no.male.test.df <- heart.df[-male.indexes.test,]
+no.male.test.df <- no.male.test.df[,-c(9)]
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+log.reg.no.male <- glm(HeartDisease ~ .-1, data = no.male.training.df, family = "binomial")
+summary(log.reg.no.male)
+anova.no.male <- anova(log.reg.no.male, test='Chisq')
+AIC(log.reg.no.male)
+BIC(log.reg.no.male)
+confusion_misclass(no.male.test.df,log.reg.no.male, conf_mat = T)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Females Removed
+```{r, echo=FALSE, eval=FALSE}
+female.indexes.training <- c()
+female.indexes.test <- c()
+for ( i in 1:nrow(heart.training)){
+  if(heart.training[i,9]== "Female"){
+    female.indexes.training <- append(female.indexes.training,i)
+  }
+}
+for ( i in 1:nrow(heart.test)){
+  if(heart.test[i,9]== "Female"){
+    female.indexes.test <- append(female.indexes.test,i)
+  }
+}
+no.female.training.df <- heart.df[-female.indexes.training,]
+no.female.training.df <- no.female.training.df[,-c(9)]
+no.female.test.df <- heart.df[-female.indexes.test,]
+no.female.test.df <- no.female.test.df[,-c(9)]
+
+log.reg.no.female <- glm(HeartDisease ~ .-1, data = no.female.training.df, family = "binomial")
+summary(log.reg.no.female)
+anova.no.female <- anova(log.reg.no.female, test='Chisq')
+AIC(log.reg.no.female)
+BIC(log.reg.no.female)
+confusion_misclass(no.female.test.df,log.reg.no.female, conf_mat = T)
+```
+
+## Smoker
+```{r, echo=FALSE, eval=FALSE}
+smoker.indexes.training <- c()
+smoker.indexes.test <- c()
+for ( i in 1:nrow(heart.training)){
+  if(heart.training[i,3]== "Yes"){
+    smoker.indexes.training <- append(smoker.indexes.training,i)
+  }
+}
+for ( i in 1:nrow(heart.test)){
+  if(heart.test[i,3]== "Yes"){
+    smoker.indexes.test <- append(smoker.indexes.test,i)
+  }
+}
+
+smoker.training.df <- heart.df[-smoker.indexes.training,]
+smoker.training.df <- smoker.training.df[,-c(3)]
+smoker.test.df <- heart.df[-smoker.indexes.test,]
+smoker.test.df <- smoker.test.df[,-c(3)]
+
+log.reg.smoker <- glm(HeartDisease ~ .-1, data = smoker.training.df, family = "binomial")
+summary(log.reg.smoker)
+anova.smoker<- anova(log.reg.smoker, test='Chisq')
+AIC(log.reg.smoker)
+BIC(log.reg.smoker)
+confusion_misclass(smoker.test.df,log.reg.smoker, conf_mat = T)
+```
+
+## Non-Smoker
+```{r, echo=FALSE, eval=FALSE}
+non.smoker.indexes.training <- c()
+non.smoker.indexes.test <- c()
+for ( i in 1:nrow(heart.training)){
+  if(heart.training[i,3]== "No"){
+    non.smoker.indexes.training <- append(non.smoker.indexes.training,i)
+  }
+}
+for ( i in 1:nrow(heart.test)){
+  if(heart.test[i,3]== "No"){
+    non.smoker.indexes.test <- append(non.smoker.indexes.test,i)
+  }
+}
+
+non.smoker.training.df <- heart.df[-non.smoker.indexes.training,]
+non.smoker.training.df <- non.smoker.training.df[,-c(3)]
+non.smoker.test.df <- heart.df[-non.smoker.indexes.test,]
+non.smoker.test.df <- non.smoker.test.df[,-c(3)]
+
+log.reg.non.smoker <- glm(HeartDisease ~ .-1, data = non.smoker.training.df, family = "binomial")
+summary(log.reg.non.smoker)
+anova.non.smoker<- anova(log.reg.non.smoker, test='Chisq')
+AIC(log.reg.non.smoker)
+BIC(log.reg.non.smoker)
+
+confusion_misclass(non.smoker.test.df,log.reg.non.smoker, conf_mat = T)
+```
+
+## Stroke
+```{r, echo=FALSE, eval=FALSE}
+stroke.indexes.training <- c()
+stroke.indexes.test <- c()
+for ( i in 1:nrow(heart.training)){
+  if(heart.training[i,5]== "Yes"){
+    stroke.indexes.training <- append(stroke.indexes.training,i)
+  }
+}
+for ( i in 1:nrow(heart.test)){
+  if(heart.test[i,5]== "Yes"){
+    stroke.indexes.test <- append(stroke.indexes.test,i)
+  }
+}
+
+stroke.training.df <- heart.df[-stroke.indexes.training,]
+stroke.training.df <- stroke.training.df[,-c(5)]
+stroke.test.df <- heart.df[-stroke.indexes.test,]
+stroke.test.df <- stroke.test.df[,-c(5)]
+
+log.reg.stroke <- glm(HeartDisease ~ .-1, data = stroke.training.df, family = "binomial")
+summary(log.reg.stroke)
+anova.stroke<- anova(log.reg.stroke, test='Chisq')
+AIC(log.reg.stroke)
+BIC(log.reg.stroke)
+confusion_misclass(stroke.test.df,log.reg.stroke, conf_mat = T)
+```
+
+## Non-Stroke
+```{r, echo=FALSE, eval=FALSE}
+non.stroke.indexes.training <- c()
+non.stroke.indexes.test <- c()
+for ( i in 1:nrow(heart.training)){
+  if(heart.training[i,5]== "No"){
+    non.stroke.indexes.training <- append(non.stroke.indexes.training,i)
+  }
+}
+for ( i in 1:nrow(heart.test)){
+  if(heart.test[i,5]== "No"){
+    non.stroke.indexes.test <- append(non.stroke.indexes.test,i)
+  }
+}
+
+non.stroke.training.df <- heart.df[-non.stroke.indexes.training,]
+non.stroke.training.df <- non.stroke.training.df[,-c(5)]
+non.stroke.test.df <- heart.df[-non.stroke.indexes.test,]
+non.stroke.test.df <- non.stroke.test.df[,-c(5)]
+
+log.reg.non.stroke <- glm(HeartDisease ~ .-1, data = non.stroke.training.df, family = "binomial")
+summary(log.reg.non.stroke)
+anova.non.stroke<- anova(log.reg.non.stroke, test='Chisq')
+AIC(log.reg.non.stroke)
+BIC(log.reg.non.stroke)
+confusion_misclass(non.stroke.test.df,log.reg.non.stroke, conf_mat = T)
+```
+
+## ROC Curve
+```{r, eval=FALSE}
+library(ROCR)
+pred = predict(log.reg.full,heart.test, type = "response")
+pred2 = prediction(pred, heart.test$HeartDisease)
+roc = performance(pred2, "tpr", "fpr")
+plot(roc, colorize = T, lwd = 2)
+title("ROC Curve")
+```
