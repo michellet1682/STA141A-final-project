@@ -380,6 +380,41 @@ for(i in 1:ceiling(n)){
 optimal_k</code></pre>
 <p>To determine what the optimal k value to use for our kNN algorithms is, we ran an exhaustive search to compare the misclassification rates of ks from 1 to 277. By doing so, we found the optimal k value for our data to be k=3, which resulted in a misclassification rate of 0.0529. This rate is noticeably lower when compared to the misclassifcation rate when using the general practice k value of sqrt(n)/2 = 275.5 which was 0.0852. Thus, we find that the general practice k has worse performance than the optimal k. Therefore, if using an algorithm that can find the optimal k efficiently, doing so is recommended over using the simpler general practice k value.</p>
 </div>
+<div id="k-optimization-graphs" class="section level2">
+<h2>k Optimization Graphs</h2>
+<pre class="r"><code>library(ggplot2)
+#optimal_k_output = 3
+#misclass.df = as.data.frame(cbind(k = 1:276, Misclass_Rate=misclass_rates))
+#write.csv(misclass.df, &quot;C:\\File Path\\knn_misclass_rates.csv&quot;, row.names=F)
+misclass.df = read.csv(&quot;knn_misclass_rates.csv&quot;, header=T)
+
+misclass_plot = ggplot(data = misclass.df, aes(x=k, y=Misclass_Rate))+
+  geom_line(col=&quot;red2&quot;)+
+  geom_point(data = misclass.df[-which.min(misclass.df$Misclass_Rate),], col=&quot;dodgerblue3&quot;, alpha=0.5)+
+  geom_point(data = misclass.df[which.min(misclass.df$Misclass_Rate),], col = &quot;green&quot;, alpha = 0.5, size=2.5)+
+  labs(x = &quot;k Value&quot;, y = &quot;Misclassification Rate&quot;)+
+  scale_x_continuous(breaks = seq(from = 0, to = 276, by = 50))+
+  scale_y_continuous(breaks = seq(from = 0.05, to = 0.09, by = 0.005))
+
+accuracy_plot = ggplot(data = misclass.df, aes(x=k, y= (1 - Misclass_Rate)*100))+
+  geom_line(col=&quot;red2&quot;)+
+  geom_point(data = misclass.df[-which.min(misclass.df$Misclass_Rate),], col=&quot;dodgerblue3&quot;, alpha=0.5)+
+  geom_point(data = misclass.df[which.min(misclass.df$Misclass_Rate),], col = &quot;green&quot;, alpha = 0.5, size=2.5)+
+  labs(x = &quot;k Value&quot;, y = &quot;Accuracy&quot;)+
+  scale_x_continuous(breaks = seq(from = 0, to = 276, by = 50))+
+  ylim(90,95)
+
+misclass_plot
+accuracy_plot</code></pre>
+<div id="misclassification-plot" class="section level3">
+<h3>Misclassification Plot</h3>
+<p><img src="images/misclass_plot.PNG" /> The misclassification error rate increases as the k value increases.</p>
+</div>
+<div id="accuracy-plot" class="section level3">
+<h3>Accuracy Plot</h3>
+<p><img src="images/accuracy_plot.PNG" /> The accuracy decreases as the k value increases.</p>
+</div>
+</div>
 <div id="confusion-misclassification-function" class="section level2">
 <h2>Confusion Misclassification Function</h2>
 <p>This function is used to compute the confusion matrix of the knn full and no medical models as well as the full, no medical, and medical logistic regression models.</p>
@@ -414,14 +449,15 @@ optimal_k</code></pre>
   
   return(result)
 }</code></pre>
+<p>To determine what impacts prior medical conditions and diseases have on whether a person will be predicted to develop heart disease, we will be comparing the misclassification rates of several different algorithms and models. We will be comparing the results of a kNN algorithm that uses all predictors and a kNN algorithm that uses all predictors except the predictors for prior medical conditions. Additionally, we will be comparing the results of a logistic regression using all of the predictors, a logistic regression using all of the predictors except the predictors for prior medical conditions, and a logistic regression using only the predictors for prior medical conditions. We will not be using a kNN algorithm based on only the predictors for prior medical conditions because due to the low number of factors and large sample size, this results in there being far too many ties (each possible observation will have ~5000 ties) so the kNN algorithm will not be usable.</p>
 </div>
 <div id="knn-full" class="section level2">
 <h2>kNN: Full</h2>
-<div id="confusion-matrix-for-knn-full-k-3" class="section level3">
-<h3>Confusion matrix for knn full, k = 3</h3>
+<div id="confusion-matrix-for-knn-full-k-n" class="section level3">
+<h3>Confusion matrix for knn full, k = n</h3>
 <p><img src="images/knn_full_n.PNG" /></p>
 </div>
-<div id="confusion-matrix-for-knn-full-k-3-1" class="section level3">
+<div id="confusion-matrix-for-knn-full-k-3" class="section level3">
 <h3>Confusion matrix for knn full, k = 3</h3>
 <p><img src="images/knn_full_3.PNG" /></p>
 </div>
@@ -439,7 +475,6 @@ optimal_k</code></pre>
 </div>
 <div id="table" class="section level2">
 <h2>Table</h2>
-<p>To determine what impacts prior medical conditions and diseases have on whether a person will be predicted to develop heart disease, we will be comparing the misclassification rates of several different algorithms and models. We will be comparing the results of a kNN algorithm that uses all predictors and a kNN algorithm that uses all predictors except the predictors for prior medical conditions. Additionally, we will be comparing the results of a logistic regression using all of the predictors, a logistic regression using all of the predictors except the predictors for prior medical conditions, and a logistic regression using only the predictors for prior medical conditions. We will not be using a kNN algorithm based on only the predictors for prior medical conditions because due to the low number of factors and large sample size, this results in there being far too many ties (each possible observation will have ~5000 ties) so the kNN algorithm will not be usable.</p>
 <div id="confusion-matrix-for-the-full-logistic-regression-model" class="section level3">
 <h3>Confusion matrix for the full logistic regression model</h3>
 <p><img src="images/log_full.PNG" /></p>
@@ -457,8 +492,8 @@ misclass.rate.df %&gt;%
 <div id="table-of-the-misclassification-rates-by-all-models" class="section level3">
 <h3>Table of the misclassification rates by all models</h3>
 <p><img src="images/misclassrate.PNG" /></p>
-<p>When running the kNN algorithm (with k=3) using all of the predictors, we had a misclassification rate of 0.0415. The kNN algorithm (with k=3) without the predictors for prior medical conditions, resulted in a smaller misclassification rate of 0.0339. However, the logistic regression using all of the predictors had a misclassification rate of 0.0833 and the logistic regression not using the predictors for prior medical conditions had a misclassification rate of 0.0861. Lastly, the logistic regression which only used the predictors for prior medical conditions had a misclassification rate of 0.0852.</p>
-<p>Based on these results, we see that the exclusion of the predictors for prior medical conditions decreased the misclassification rate when using kNN, but increased the misclassification rate when using logitistic regression. However, since these differences were so slight (&lt;0.01), we conclude that the exclusion of prior medical conditions had no siginificant effect on the effectiveness of the algorithms and models. However, we can also see that the logistic regression model that only considered prior medical conditions had a misclassification rate only 0.0019 larger than the full model. Thus, we find that a model that only uses prior medical conditions is almost as effective, if not as effective as the full model. Therefore, we conclude that prior medical conditions have a significant impact on whether an individual may develop heart disease.</p>
+<p>When running the kNN algorithm (with k=3) using all of the predictors, we had a misclassification rate of 0.0529. The kNN algorithm (with k=3) without the predictors for prior medical conditions, resulted in a smaller misclassification rate of 0.0439. However, the logistic regression using all of the predictors had a misclassification rate of 0.0823 and the logistic regression not using the predictors for prior medical conditions had a misclassification rate of 0.0851. Lastly, the logistic regression which only used the predictors for prior medical conditions had a misclassification rate of 0.0852.</p>
+<p>Based on these results, we see that the exclusion of the predictors for prior medical conditions decreased the misclassification rate when using kNN, but increased the misclassification rate when using logistic regression. However, since these differences were so slight (&lt;0.01), we conclude that the exclusion of prior medical conditions had no significant effect on the effectiveness of the algorithms and models. However, we can also see that the logistic regression model that only considered prior medical conditions had a misclassification rate only 0.0019 larger than the full model. Thus, we find that a model that only uses prior medical conditions is almost as effective, if not as effective as the full model. Therefore, we conclude that prior medical conditions have a significant impact on whether an individual may develop heart disease.</p>
 </div>
 </div>
 

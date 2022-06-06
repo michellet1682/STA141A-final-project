@@ -229,9 +229,9 @@ library(ROCR)
 pred = predict(logreg_full,heart.test, type = "response")
 pred2 = prediction(pred, heart.test$HeartDisease)
 roc = performance(pred2, "tpr", "fpr")
-plot(roc, colorize = T, lwd = 2)
-title("ROC Curve")
+plot(roc, main = "ROC Curve", print.cutoffs.at = seq(0.1, 0.9, 0.1), colorize = T, lwd = 2)
 ```
+There are some threshold cut off points graphed above. By eyeballing the graph, we can see that the threshold is somewhere in the dark blue region since that is closest to 1 on for the true positive rate. The threshold will be somewhere around 0.1 (based on the one of the cut off points and color key).
 
 ### Threshold
 ```{r, echo=FALSE, message=FALSE}
@@ -242,9 +242,12 @@ predictions.df = data.frame(prediction = predict(logreg_full, newdata = heart.te
                             truth = heart.test$HeartDisease,
                             model = "test")
 roc.plot2 = roc(heart.test$HeartDisease, predictions.df$prediction, plot = F, print.auc = T)
+auc.plot = roc.plot2$auc
+auc.plot
 threshold = coords(roc.plot2, x="best")
 threshold
 ```
+The AUC is 0.834 which is quite good since it's closer to 1 than 0.5. The calculated threshold is 0.083 which aligns with the ROC curve from above. 
 
 ## Conclusion
 It is possible to build a predictive model of Heart Disease. We notice that when changing the data to control for different variables, we have a significant impact on certain variables compared to the full model. Most of the controlled data models had lower AICS than the full models. And these models also had more statistically insignificant variables. This means that among these given variables, variables were less predictive of Heart Disease. The variables that seem to have the greatest changes between models are RaceHispanic, Sleeptime ,Ages 30-34 ,and Ages 35-39. And other variables seem to have no impact across all models such as Ages 25-29 and Diabetic while pregnant. RaceOther and RaceWhite are all statistically insignificant in all models except the full models. This might mean that these variables have different effects in HeartDisease given other factors and may not be as strong predictors of Heart Disease as we believed.

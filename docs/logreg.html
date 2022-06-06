@@ -864,11 +864,13 @@ div.tocify {
 </div>
 <div id="roc-curve" class="section level2">
 <h2>ROC Curve</h2>
-<p><img src="logreg_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p><img src="logreg_files/figure-html/unnamed-chunk-8-1.png" width="672" /> There are some threshold cut off points graphed above. By eyeballing the graph, we can see that the threshold is somewhere in the dark blue region since that is closest to 1 on for the true positive rate. The threshold will be somewhere around 0.1 (based on the one of the cut off points and color key).</p>
 <div id="threshold" class="section level3">
 <h3>Threshold</h3>
+<pre><code>## Area under the curve: 0.834</code></pre>
 <pre><code>##    threshold specificity sensitivity
 ## 1 0.08387448   0.7292066   0.7910884</code></pre>
+<p>The AUC is 0.834 which is quite good since it’s closer to 1 than 0.5. The calculated threshold is 0.083 which aligns with the ROC curve from above.</p>
 </div>
 </div>
 <div id="conclusion" class="section level2">
