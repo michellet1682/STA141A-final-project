@@ -29,6 +29,9 @@
        h6 {font-size: 12px;}
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
@@ -222,6 +225,69 @@ $(document).ready(function () {
 
 
 
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
 
 </head>
 
@@ -229,6 +295,16 @@ $(document).ready(function () {
 
 
 <div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
 
 
@@ -274,40 +350,69 @@ $(document).ready(function () {
 </div>
 
 
+<p>We constructed a model with all the variables in the data to try to predict heart disease. We also created models with data only from certain levels. These levels were: Males removed, Females removed, Smokers removed, Non-smokers removed, people who had strokes removed and people who didn’t have strokes removed. We chose the variables of Sex, Smoking, and Strokes because we were curious whether the levels of these specific variables had any impact on predicting Heart Disease. First, we want to see which variables of each of these models were significant in prediciting heart disease and the overall effectiveness of the model.</p>
 <div id="full-model" class="section level2">
 <h2>Full Model</h2>
+<p>The variables that are not statistically significant are AgeCategory 25-29, RaceOther, and RaceWhite of the significance level is at 0.1. The variable that is not statistically significant if the significance level is 0.05 DiabeticYes (during pregnancy). The variable that isn’t statistically significant if the significance level is 0.001 is RaceHispanic. The misclassification rate is 0.08330727 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
 </div>
 <div id="males-removed" class="section level2">
 <h2>Males removed</h2>
+<p>The variables that are not statistically significant are AgeCategory25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy). Sleep time and Race Hispanic are statistically significant only if the significance level is 0.01. Ages 35-39 is statistically significant only if the significance level is 0.001.The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
 </div>
 <div id="females-removed" class="section level2">
 <h2>Females Removed</h2>
+<p>The variables that are not statistically significant are RaceHispanic, Race Other, and Diabetic Yes (during pregnancy). Sleep time is statistically significant only if the significance level is 0.001.AgeCategory 25-29 and RaceBlack are statistically significant only if the level of significance is 0.05. RaceWhite and BMI are statistically significant only if the significance level is 0.01. Sleept time and Ages30-34 are statistically signifcant only if the level of significance is 0.001. The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
 </div>
 <div id="smoker" class="section level2">
 <h2>Smoker</h2>
+<p>The variables that are not statistically significant are BMI, AgeCategory 25-29, RaceOther, RaceWhite, and Diabetic Yes(during pregnancy) is the level of significance is 0.1. Sleeptime is only statistically significant if the level of significance is 0.05. AgeCategory30-34 and RaceHispanic is statistically significant only if the significance level is 0.001.The misclassification rate is 0.08473544 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
 </div>
 <div id="non-smoker" class="section level2">
 <h2>Non-Smoker</h2>
+<p>The variables that are not statistically significant are AgeCategory 25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy) if the level of significance is 0.1. MentalHealth and RaceHispanic are statistically significant if the level of significance is 0.01. The misclassification rate is 0.08475112 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
 </div>
 <div id="stroke" class="section level2">
 <h2>Stroke</h2>
+<p>The variables that are not statistically significant are AgeCategory 25-29 and Hispanic if the level of significance is 0.1. BMI and RaceWhite are only statistically significant if the level of significance is 0.05. Sleeptime is only statistically significant if the level of significance 0.001. The misclassification rate is 0.08525729 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
 </div>
 <div id="non-stroke" class="section level2">
 <h2>Non-Stroke</h2>
+<p>The variables that are not statistically significant are BMI, AgeCategory 25-29, AgeCategory 30-34, AgeCategory 35-39, RaceOther and sleeptime if the level of significance is 0.1. Hispanic, RaceWhite, DiabeticYes (during pregnancy), PhysicallyActiveYes are statistically significant if the level of significance is 0.01. AlcoholDrinkingYes and RaceBlack are not statistically significant if the level of significance is 0.001. The misclassification rate is 0.08538408 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
+</div>
+<div id="findings" class="section level2">
+<h2>Findings</h2>
+<p>All models were effective at predicting Heart Disease with different variables being statistically significant at different levels.</p>
+<p>But which models where the best at predicting Heart Disease? And how did the statistical significance of variables change between the models? How do naturally paired models compare to each other.</p>
+<div id="compare-all-models" class="section level3">
+<h3>Compare all models</h3>
+<p>The misclassification error rates only had slight differences between the all the models and all were similarly effective at prediction. Also when comparing AIC, the order of largest to smallest AIC’s are log.reg.stroke, log.reg.full, log.reg.non.stroke, log.reg.smoker,log.reg.no.female,log.reg.no.male, and log.reg.non.smoker. This means that the model where the non smokers were removed from the data set had the best fit model by AIC. This doesn’t mean that we recommend the data set remove all non-smokers from their data sets, but rather that a model with all smokers have the most explanatory power when trying to model predictor variables and heart disease. It seems that whether people are smoking or not effects the model greatly according to AIC. The full model has one of the highest AIC’s compared to the other models which might indicate that the model predictor variables might be confounding variables. As when only giving data from a certain level improves the predictive power of the model. But, in the Full model, there are less variables that are statistically insignificant.</p>
+<p>When comparing the different variables’s statistical significance when predicting Heart Disease many of the variables have had a lot of consistency. Most variables remain statistically significant abnd do not deviate between the models. Certain notable changes are as follows. Ages25-29, RaceOther, RaceWhite,DiabeticYes (while pregnant) and BMI consistently have really low statistical significance across all models. RaceHispanic, Sleeptime ,Ages 30-34 ,and Ages 35-39 intermittenly lose very high statistical significance. MentalHealth only loses statistical significance in the non-smoker only model. Alcohol drinking loses statistical significance in the non-stroke model only. PhysicalActiveYes loses statistical significance in the non-stroke only model. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 across all models.</p>
+</div>
+<div id="compare-pairs-of-models" class="section level3">
+<h3>Compare pairs of models</h3>
+<p>Males and Female models had similar AIC’s and had the mostly the same variables that where less statistically significant and of the same level of significance. They had a similar misclassifcation error rate as well. The models of the two sexes do not vary much from each other meaning their predictive power when looking at development of heart disease is roughly equal.</p>
+<p>Smoker and non-smoker models had the mostly the same variables that where less statistically significant and of the same level of significance. They had a similar misclassifcation error rate as well. The AIC of model with smokers has a much smaller AIC than the model with non-smokers. This means that the data at smokers are a better fit at predicting Heart Disease than the data of non-smokers. So, whether someone smokes or doesn’t, has an effect on the predictive power of the model and may be a confounding variable. This paired with multicollineratiy of smoking/nonsmoking variable may indicate multicollinearity.</p>
+<p>Stroke and non-stroke models had very close AIC’s. They had a similar misclassifcation error rate. The Stroke only model had much fewer statistically insignificant variables than the non-stroke only model. This means that more predictor variables under non-stroke only model are much less predictive of Heart Disease. This might indicate that people who did not have strokes are at less risk of Heart Disease as they have less factors that predict heart disease.</p>
+</div>
 </div>
 <div id="roc-curve" class="section level2">
 <h2>ROC Curve</h2>
-<pre class="r"><code>library(ROCR)
-pred = predict(logreg_full,heart.test, type = &quot;response&quot;)
-pred2 = prediction(pred, heart.test$HeartDisease)
-roc = performance(pred2, &quot;tpr&quot;, &quot;fpr&quot;)
-plot(roc, colorize = T, lwd = 2)
-title(&quot;ROC Curve&quot;)</code></pre>
 <p><img src="logreg_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<div id="threshold" class="section level3">
+<h3>Threshold</h3>
+<pre><code>##    threshold specificity sensitivity
+## 1 0.08387448   0.7292066   0.7910884</code></pre>
+</div>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>It is possible to build a predictive model of Heart Disease. We notice that when changing the data to control for different variables, we have a significant impact on certain variables compared to the full model. Most of the controlled data models had lower AICS than the full models. And these models also had more statistically insignificant variables. This means that among these given variables, variables were less predictive of Heart Disease. The variables that seem to have the greatest changes between models are RaceHispanic, Sleeptime ,Ages 30-34 ,and Ages 35-39. And other variables seem to have no impact across all models such as Ages 25-29 and Diabetic while pregnant. RaceOther and RaceWhite are all statistically insignificant in all models except the full models. This might mean that these variables have different effects in HeartDisease given other factors and may not be as strong predictors of Heart Disease as we believed.</p>
 </div>
 
 
 
+</div>
+</div>
 
 </div>
 
@@ -340,6 +445,35 @@ $(document).ready(function () {
 
 <!-- code folding -->
 
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>

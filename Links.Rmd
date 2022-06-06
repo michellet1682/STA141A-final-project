@@ -200,7 +200,6 @@ misclass.rate.df = data.frame(Model = tests,
 misclass.rate.df %>% 
   kbl(caption = "Misclassification Rate by Model") %>% 
   kable_classic(full_width = F, html_font = "Cambria") 
-#%>% save_kable(file = "misclasstable.png")
 ```
 
 ### Table of the misclassification rates by all models

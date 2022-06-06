@@ -1,11 +1,16 @@
 ---
 title: "logreg"
-output: html_document
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+We constructed a model with all the variables in the data to try to predict heart disease.  We also created models with data only from certain levels.  These levels were: Males removed, Females removed, Smokers removed, Non-smokers removed, people who had strokes removed and people who didn't have strokes removed.  We chose the variables of Sex, Smoking, and Strokes because we were curious whether the levels of these specific variables had any impact on predicting Heart Disease. First, we want to see which variables of each of these models were significant in prediciting heart disease and the overall effectiveness of the model.   
 
 ## Full Model
 ```{r, echo=FALSE, eval=FALSE}
@@ -16,6 +21,9 @@ AIC(log.reg.full)
 BIC(log.reg.full)
 confusion_misclass(heart.test,log.reg.full, conf_mat = T)
 ```
+
+The variables that are not statistically significant are AgeCategory 25-29, RaceOther, and RaceWhite of the significance level is at 0.1. The variable that is not statistically significant if the significance level is 0.05 DiabeticYes (during pregnancy). The variable that isn't statistically significant if the significance level is 0.001 is RaceHispanic. The misclassification rate is 0.08330727 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.  
+
 
 ## Males removed
 ```{r, echo=FALSE, eval=FALSE}
@@ -43,6 +51,8 @@ AIC(log.reg.no.male)
 BIC(log.reg.no.male)
 confusion_misclass(no.male.test.df,log.reg.no.male, conf_mat = T)
 ```
+
+The variables that are not statistically significant are AgeCategory25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy).  Sleep time and Race Hispanic are statistically significant only if the significance level is 0.01. Ages 35-39 is statistically significant only if the significance level is 0.001.The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.   
 
 
 ## Females Removed
@@ -72,6 +82,8 @@ BIC(log.reg.no.female)
 confusion_misclass(no.female.test.df,log.reg.no.female, conf_mat = T)
 ```
 
+The variables that are not statistically significant are RaceHispanic, Race Other, and Diabetic Yes (during pregnancy). Sleep time is statistically significant only if the significance level is 0.001.AgeCategory 25-29 and RaceBlack are statistically significant only if the level of significance is 0.05. RaceWhite and BMI are statistically significant only if the significance level is 0.01.  Sleept time and Ages30-34 are statistically signifcant only if the level of significance is 0.001. The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
+
 ## Smoker
 ```{r, echo=FALSE, eval=FALSE}
 smoker.indexes.training <- c()
@@ -99,6 +111,8 @@ AIC(log.reg.smoker)
 BIC(log.reg.smoker)
 confusion_misclass(smoker.test.df,log.reg.smoker, conf_mat = T)
 ```
+
+The variables that are not statistically significant are BMI, AgeCategory 25-29, RaceOther, RaceWhite, and Diabetic Yes(during pregnancy) is the level of significance is 0.1. Sleeptime is only statistically significant if the level of significance is 0.05.  AgeCategory30-34 and RaceHispanic is statistically significant only if the significance level is 0.001.The misclassification rate is 0.08473544 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
 
 ## Non-Smoker
 ```{r, echo=FALSE, eval=FALSE}
@@ -129,6 +143,8 @@ BIC(log.reg.non.smoker)
 confusion_misclass(non.smoker.test.df,log.reg.non.smoker, conf_mat = T)
 ```
 
+The variables that are not statistically significant are AgeCategory 25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy) if the level of significance is 0.1. MentalHealth and RaceHispanic are statistically significant if the level of significance is 0.01.  The misclassification rate is 0.08475112 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
+
 ## Stroke
 ```{r, echo=FALSE, eval=FALSE}
 stroke.indexes.training <- c()
@@ -156,6 +172,8 @@ AIC(log.reg.stroke)
 BIC(log.reg.stroke)
 confusion_misclass(stroke.test.df,log.reg.stroke, conf_mat = T)
 ```
+
+The variables that are not statistically significant are AgeCategory 25-29 and Hispanic if the level of significance is 0.1.  BMI and RaceWhite are only statistically significant if the level of significance is 0.05.  Sleeptime is only statistically significant if the level of significance 0.001.  The misclassification rate is 0.08525729 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
 
 ## Non-Stroke
 ```{r, echo=FALSE, eval=FALSE}
@@ -185,8 +203,28 @@ BIC(log.reg.non.stroke)
 confusion_misclass(non.stroke.test.df,log.reg.non.stroke, conf_mat = T)
 ```
 
+The variables that are not statistically significant are BMI, AgeCategory 25-29, AgeCategory 30-34, AgeCategory 35-39, RaceOther and sleeptime if the level of significance is 0.1. Hispanic, RaceWhite, DiabeticYes (during pregnancy), PhysicallyActiveYes are statistically significant if the level of significance is 0.01. AlcoholDrinkingYes and RaceBlack are not statistically significant if the level of significance is 0.001. The misclassification rate is 0.08538408 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
+
+## Findings
+All models were effective at predicting Heart Disease with different variables being statistically significant at different levels.
+
+But which models where the best at predicting Heart Disease?  And how did the statistical significance of variables change between the models? How do naturally paired models compare to each other.
+
+### Compare all models
+The misclassification error rates only had slight differences between the all the models and all were similarly effective at prediction.  Also when comparing AIC, the order of largest to smallest AIC's are log.reg.stroke, log.reg.full, log.reg.non.stroke, log.reg.smoker,log.reg.no.female,log.reg.no.male, and log.reg.non.smoker. This means that  the model where the non smokers were removed from the data set had the best fit model by AIC.  This doesn't mean that we recommend the data set remove all non-smokers from their data sets, but rather that a model with all smokers have the most explanatory power when trying to model predictor variables and heart disease.  It seems that whether people are smoking or not effects the model greatly according to AIC. The full model has one of the highest AIC's compared to the other models which might indicate that the model predictor variables might be confounding variables.  As when only giving data from a certain level improves the predictive power of the model.  But, in the Full model, there are less variables that are statistically insignificant.  
+
+When comparing the different variables's statistical significance when predicting Heart Disease many of the variables have had a lot of consistency.  Most variables remain statistically significant abnd do not deviate between the models.  Certain notable changes are as follows.  Ages25-29, RaceOther, RaceWhite,DiabeticYes (while pregnant) and BMI consistently have really low statistical significance across all models.  RaceHispanic, Sleeptime ,Ages 30-34 ,and Ages 35-39 intermittenly lose very high statistical significance. MentalHealth only loses statistical significance in the non-smoker only model.  Alcohol drinking loses statistical significance in the non-stroke model only. PhysicalActiveYes loses statistical significance in the non-stroke only model.  BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 across all models.  
+
+### Compare pairs of models
+Males and Female models had similar AIC's and had the mostly the same variables that where less statistically significant and of the same level of significance.  They had a similar misclassifcation error rate as well. The models of the two sexes do not vary much from each other meaning their predictive power when looking at development of heart disease is roughly equal.  
+
+Smoker and non-smoker models had the mostly the same variables that where less statistically significant and of the same level of significance.  They had a similar misclassifcation error rate as well. The AIC of model with smokers has a much smaller AIC than the model with non-smokers.  This means that the data at smokers are a better fit at predicting Heart Disease than the data of non-smokers.  So, whether someone smokes or doesn't, has an effect on the predictive power of the model and may be a confounding variable. This paired with multicollineratiy of smoking/nonsmoking variable may indicate multicollinearity.
+
+Stroke and non-stroke models had very close AIC's. They had a similar misclassifcation error rate.  The Stroke only model had much fewer statistically insignificant variables than the non-stroke only model. This means that more predictor variables under non-stroke only model are much less predictive of Heart Disease. This might indicate that people who did not have strokes are at less risk of Heart Disease as they have less factors that predict heart disease.
+
+
 ## ROC Curve
-```{r}
+```{r, echo=FALSE}
 library(ROCR)
 pred = predict(logreg_full,heart.test, type = "response")
 pred2 = prediction(pred, heart.test$HeartDisease)
@@ -194,3 +232,19 @@ roc = performance(pred2, "tpr", "fpr")
 plot(roc, colorize = T, lwd = 2)
 title("ROC Curve")
 ```
+
+### Threshold
+```{r, echo=FALSE, message=FALSE}
+library(pROC)
+library(plotROC)
+predictions.df = data.frame(prediction = predict(logreg_full, newdata = heart.test, 
+                                                 type = "response"),
+                            truth = heart.test$HeartDisease,
+                            model = "test")
+roc.plot2 = roc(heart.test$HeartDisease, predictions.df$prediction, plot = F, print.auc = T)
+threshold = coords(roc.plot2, x="best")
+threshold
+```
+
+## Conclusion
+It is possible to build a predictive model of Heart Disease. We notice that when changing the data to control for different variables, we have a significant impact on certain variables compared to the full model. Most of the controlled data models had lower AICS than the full models. And these models also had more statistically insignificant variables. This means that among these given variables, variables were less predictive of Heart Disease. The variables that seem to have the greatest changes between models are RaceHispanic, Sleeptime ,Ages 30-34 ,and Ages 35-39. And other variables seem to have no impact across all models such as Ages 25-29 and Diabetic while pregnant. RaceOther and RaceWhite are all statistically insignificant in all models except the full models. This might mean that these variables have different effects in HeartDisease given other factors and may not be as strong predictors of Heart Disease as we believed.
