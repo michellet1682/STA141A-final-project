@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 We constructed a model with all the variables in the data to try to predict heart disease.  We also created models with data only from certain levels.  These levels were: Males removed, Females removed, Smokers removed, Non-smokers removed, people who had strokes removed and people who didn't have strokes removed.  We chose the variables of Sex, Smoking, and Strokes because we were curious whether the levels of these specific variables had any impact on predicting Heart Disease. First, we want to see which variables of each of these models were significant in prediciting heart disease and the overall effectiveness of the model.   
 
 ## Full Model
-```{r, echo=FALSE, eval=FALSE}
+```{r, echo=FALSE}
 log.reg.full <- glm(HeartDisease ~ .-1, data = heart.training, family = "binomial")
 summary(log.reg.full)
 anova.full <- anova(log.reg.full, test='Chisq')
@@ -26,7 +26,7 @@ The variables that are not statistically significant are AgeCategory 25-29, Race
 
 
 ## Males removed
-```{r, echo=FALSE, eval=FALSE}
+```{r, echo=FALSE}
 male.indexes.training <- c()
 male.indexes.test <- c()
 for ( i in 1:nrow(heart.training)){
@@ -56,7 +56,7 @@ The variables that are not statistically significant are AgeCategory25-29, RaceO
 
 
 ## Females Removed
-```{r, echo=FALSE, eval=FALSE}
+```{r, echo=FALSE}
 female.indexes.training <- c()
 female.indexes.test <- c()
 for ( i in 1:nrow(heart.training)){
@@ -85,7 +85,7 @@ confusion_misclass(no.female.test.df,log.reg.no.female, conf_mat = T)
 The variables that are not statistically significant are RaceHispanic, Race Other, and Diabetic Yes (during pregnancy). Sleep time is statistically significant only if the significance level is 0.001.AgeCategory 25-29 and RaceBlack are statistically significant only if the level of significance is 0.05. RaceWhite and BMI are statistically significant only if the significance level is 0.01.  Sleept time and Ages30-34 are statistically signifcant only if the level of significance is 0.001. The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
 
 ## Smoker
-```{r, echo=FALSE, eval=FALSE}
+```{r, echo=FALSE}
 smoker.indexes.training <- c()
 smoker.indexes.test <- c()
 for ( i in 1:nrow(heart.training)){
@@ -115,7 +115,7 @@ confusion_misclass(smoker.test.df,log.reg.smoker, conf_mat = T)
 The variables that are not statistically significant are BMI, AgeCategory 25-29, RaceOther, RaceWhite, and Diabetic Yes(during pregnancy) is the level of significance is 0.1. Sleeptime is only statistically significant if the level of significance is 0.05.  AgeCategory30-34 and RaceHispanic is statistically significant only if the significance level is 0.001.The misclassification rate is 0.08473544 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
 
 ## Non-Smoker
-```{r, echo=FALSE, eval=FALSE}
+```{r, echo=FALSE}
 non.smoker.indexes.training <- c()
 non.smoker.indexes.test <- c()
 for ( i in 1:nrow(heart.training)){
@@ -146,7 +146,7 @@ confusion_misclass(non.smoker.test.df,log.reg.non.smoker, conf_mat = T)
 The variables that are not statistically significant are AgeCategory 25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy) if the level of significance is 0.1. MentalHealth and RaceHispanic are statistically significant if the level of significance is 0.01.  The misclassification rate is 0.08475112 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
 
 ## Stroke
-```{r, echo=FALSE, eval=FALSE}
+```{r, echo=FALSE}
 stroke.indexes.training <- c()
 stroke.indexes.test <- c()
 for ( i in 1:nrow(heart.training)){
@@ -176,7 +176,7 @@ confusion_misclass(stroke.test.df,log.reg.stroke, conf_mat = T)
 The variables that are not statistically significant are AgeCategory 25-29 and Hispanic if the level of significance is 0.1.  BMI and RaceWhite are only statistically significant if the level of significance is 0.05.  Sleeptime is only statistically significant if the level of significance 0.001.  The misclassification rate is 0.08525729 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
 
 ## Non-Stroke
-```{r, echo=FALSE, eval=FALSE}
+```{r, echo=FALSE}
 non.stroke.indexes.training <- c()
 non.stroke.indexes.test <- c()
 for ( i in 1:nrow(heart.training)){
