@@ -28,7 +28,7 @@ This is the website for our final project during the Spring Quarter of 2022 with
 |Kaleem Ezatullah|Logistic Regression, Analysis of Results               |
 |Andrew Muench   |Logistic Regression, Analysis of Results               |
 |Michelle Tsang  |Website, kNN                                           |
-|Connor Young    |kNN, EDA, Analysis of Report                           |
+|Connor Young    |kNN, EDA, Analysis of Results                          |
 
 </div>
 <div class="col-sm-6">
