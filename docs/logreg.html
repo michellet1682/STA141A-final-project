@@ -347,7 +347,123 @@ div.tocify {
 </div>
 
 
-<p>We constructed a model with all the variables in the data to try to predict heart disease. We also created models with data only from certain levels. These levels were: Males removed, Females removed, Smokers removed, Non-smokers removed, people who had strokes removed and people who didn’t have strokes removed. We chose the variables of Sex, Smoking, and Strokes because we were curious whether the levels of these specific variables had any impact on predicting Heart Disease. First, we want to see which variables of each of these models were significant in prediciting heart disease and the overall effectiveness of the model.</p>
+<div id="correlation-function" class="section level2">
+<h2>Correlation Function</h2>
+<pre class="r"><code>library(ltm)
+library(psych)
+library(sjstats)
+
+
+correlation = function(var1, var2){
+  # check if variables are the same
+  if(var1 == var2){
+    return(1.0)
+  }
+  
+  var1.name = var1
+  var2.name = var2
+  
+  var1 = heart.df[[var1]]
+  var2 = heart.df[[var2]]
+  
+  # get whether variables are &quot;factor&quot; or &quot;numeric&quot;
+  var1.class = class(var1)
+  var2.class = class(var2)
+  
+  
+  # if var is &quot;factor&quot;, determine what kind of factor, i.e. &quot;binomial&quot;
+  if(var1.class == &quot;factor&quot;){
+    if(length(levels(var1)) == 2){
+      var1.class = &quot;binomial&quot;
+    }
+  }
+  
+  if(var2.class == &quot;factor&quot;){
+    if(length(levels(var2)) == 2){
+      var2.class = &quot;binomial&quot;
+    }
+  }
+
+  # &quot;numeric&quot; &amp; &quot;numeric&quot; correlation
+  if(var1.class == &quot;numeric&quot; &amp; var2.class == &quot;numeric&quot;){
+    return(round(cor(var1, var2),2))
+  }
+  
+  # &quot;numeric&quot; &amp; &quot;binomial&quot; correlation
+  if((var1.class == &quot;numeric&quot; &amp; var2.class == &quot;binomial&quot;) | (var1.class == &quot;binomial&quot; &amp; var2.class == &quot;numeric&quot;)){
+    # swap var1 and var2 so that var1 is &quot;numeric&quot;
+    if(var1.class == &quot;binomial&quot;){
+      temp = var1
+      temp.class = var1.class
+      var1 = var2
+      var1.class = var2.class
+      var2 = temp
+      var2.class = temp.class
+    }
+    
+    return(round(biserial.cor(var1, var2),2))
+  }
+  
+  # &quot;numeric&quot; &amp; &quot;factor&quot;
+  if((var1.class == &quot;numeric&quot; &amp; var2.class == &quot;factor&quot;) | (var1.class == &quot;factor&quot; &amp; var2.class == &quot;numeric&quot;)){
+    # swap var1 and var2 so that var1 is &quot;numeric&quot;
+    if(var1.class == &quot;factor&quot;){
+      temp = var1
+      temp.class = var1.class
+      var1 = var2
+      var1.class = var2.class
+      var2 = temp
+      var2.class = temp.class
+    }
+    
+    anova = aov(var1 ~ var2)
+    return(round(summary(anova)[[1]][[&quot;Pr(&gt;F)&quot;]][1],2))
+  }
+  
+  # binomial &amp; binomial
+  if(var1.class == &quot;binomial&quot; &amp; var2.class == &quot;binomial&quot;){
+    freq_table = table(var1, var2)
+    return(round(phi(freq_table),2))
+  }
+  # binomial &amp; factor
+  if((var1.class == &quot;binomial&quot; &amp; var2.class == &quot;factor&quot;) | (var1.class == &quot;factor&quot; &amp; var2.class == &quot;binomial&quot;)){
+    freq_table = table(var1, var2)
+    return(round(cramer(freq_table),2))
+  }
+  
+  # factor &amp; factor
+  if(var1.class == &quot;factor&quot; &amp; var2.class == &quot;factor&quot;){
+    freq_table = table(var1, var2)
+    return(round(cramer(freq_table),2))
+  }
+  
+  return(NA)
+}</code></pre>
+<div id="correlation-matrix" class="section level3">
+<h3>Correlation Matrix</h3>
+<pre><code>## Warning in matrix(data = correlations, nrow = dimensions, ncol = dimensions, :
+## data length [324] is not a sub-multiple or multiple of the number of rows [17]</code></pre>
+<p><img src="logreg_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>To attain a general understanding of how all the different variables relate to one another, we developed and executed a function that creates a correlation matrix for all of the variables. Due to the fact that we have several different types of variables (continuous, dichotomous, and non-dichotomous), we had to use several different types of correlation tests. For calculating the correlation between two continuous variables, we used Pearson’s correlation coefficient. For calculating the correlation between a continuous variable and a dichotomous variable, we used the point-biserial correlation coefficient. For a continuous and non-dichotomous variable, we had to use a one-way ANOVA <span class="math inline">\(\chi^2\)</span> test to calculate a p-value to determine whether the variables are correlated. For the correlation between two dichotomous variables, we used the <span class="math inline">\(\phi\)</span> correlation coefficient. Lastly, for the correlation between a dichotomous and non-dichotomous variable and the correlation between two non-dichotomous variables, we used Cramer’s V.</p>
+<p>Based on our correlation matrix, we see that most of the variables have a weak or negligible correlation to the other variables. The exceptions to this is the correlation between DiffWalking and PhysicalHealth which has a low negative correlation of -0.43. These results indicate that we likely won’t experience any problems with multicollinearity since none of the variables are highly correlated. Additionally, this correlation matrix indicates that AgeCategory has the strongest correlation with HeartDisease while the other variables have mostly negligible correlations. Thus, AgeCategory is likely to be a more powerful predictor of HeartDisease than other variables.</p>
+</div>
+</div>
+<div id="roc-curve" class="section level2">
+<h2>ROC Curve</h2>
+<p><img src="logreg_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>Based on the ROC curve above, we see that the supposed optimal threshold for our logistic models should be around 0.01.</p>
+<div id="threshold" class="section level3">
+<h3>Threshold</h3>
+<pre><code>## Area under the curve: 0.8127</code></pre>
+<pre><code>##    threshold specificity sensitivity
+## 1 0.07745819   0.6770862   0.8027757</code></pre>
+<p>We calculated the AUC to be 0.834, which is quite good since it’s decently close to 1. The calculated threshold is 0.083 which aligns with the ROC curve from above. However, we found that this threshold resulted in a misclassification rate of around 0.26. This is a very high error rate, and much higher than what results from a threshold of 0.5. Therefore, we will be using a threshold of 0.5, regardless of what the ROC curve suggests is optimal.</p>
+</div>
+</div>
+<div id="constructing-model" class="section level2">
+<h2>Constructing Model</h2>
+<p>We constructed a full model with all the variables included to predict heart disease. We also created models with data only from certain levels removing the levels: Male, Female, Smoke, and No Smoke. We chose the variables of Sex and Smoking because we were curious whether these particular levels had any impact on predicting Heart Disease. First, we want to see which variables of each of these models were significant in predicting heart disease and the overall effectiveness of the model.</p>
+</div>
 <div id="full-model" class="section level2">
 <h2>Full Model</h2>
 <pre><code>## 
@@ -356,495 +472,231 @@ div.tocify {
 ## 
 ## Deviance Residuals: 
 ##     Min       1Q   Median       3Q      Max  
-## -2.1296  -0.4104  -0.2438  -0.1296   3.6102  
+## -2.3160  -0.4334  -0.2753  -0.1413   3.4986  
 ## 
 ## Coefficients:
 ##                                   Estimate Std. Error z value Pr(&gt;|z|)    
-## BMI                              0.0087107  0.0011734   7.424 1.14e-13 ***
-## SmokingNo                       -6.3164258  0.1179604 -53.547  &lt; 2e-16 ***
-## SmokingYes                      -5.9614291  0.1182827 -50.400  &lt; 2e-16 ***
-## AlcoholDrinkingYes              -0.2416636  0.0343977  -7.026 2.13e-12 ***
-## StrokeYes                        1.0460316  0.0232356  45.018  &lt; 2e-16 ***
-## PhysicalHealth                   0.0031836  0.0008856   3.595 0.000325 ***
-## MentalHealth                     0.0052643  0.0009043   5.822 5.83e-09 ***
-## DiffWalkingYes                   0.2152965  0.0186268  11.558  &lt; 2e-16 ***
-## SexMale                          0.7116305  0.0149515  47.596  &lt; 2e-16 ***
-## AgeCategory25-29                 0.1323302  0.1273875   1.039 0.298898    
-## AgeCategory30-34                 0.5073142  0.1137261   4.461 8.16e-06 ***
-## AgeCategory35-39                 0.6069604  0.1091358   5.562 2.67e-08 ***
-## AgeCategory40-44                 1.0014688  0.1027935   9.743  &lt; 2e-16 ***
-## AgeCategory45-49                 1.3208789  0.0991867  13.317  &lt; 2e-16 ***
-## AgeCategory50-54                 1.7281758  0.0957675  18.046  &lt; 2e-16 ***
-## AgeCategory55-59                 1.9618946  0.0942643  20.813  &lt; 2e-16 ***
-## AgeCategory60-64                 2.2334367  0.0933858  23.916  &lt; 2e-16 ***
-## AgeCategory65-69                 2.4735458  0.0931160  26.564  &lt; 2e-16 ***
-## AgeCategory70-74                 2.7608437  0.0930420  29.673  &lt; 2e-16 ***
-## AgeCategory75-79                 2.9587155  0.0936036  31.609  &lt; 2e-16 ***
-## AgeCategory80 or older           3.2196270  0.0933374  34.494  &lt; 2e-16 ***
-## RaceAsian                       -0.5227345  0.0863755  -6.052 1.43e-09 ***
-## RaceBlack                       -0.3293477  0.0594895  -5.536 3.09e-08 ***
-## RaceHispanic                    -0.2401529  0.0605865  -3.964 7.38e-05 ***
-## RaceOther                       -0.0505084  0.0659229  -0.766 0.443573    
-## RaceWhite                       -0.0603787  0.0532060  -1.135 0.256456    
-## DiabeticNo, borderline diabetes  0.1285947  0.0429424   2.995 0.002748 ** 
-## DiabeticYes                      0.4800229  0.0171544  27.982  &lt; 2e-16 ***
-## DiabeticYes (during pregnancy)   0.1617122  0.1063732   1.520 0.128452    
-## PhysicalActivityYes              0.0259486  0.0164948   1.573 0.115688    
-## GenHealthFair                    1.5156029  0.0337591  44.895  &lt; 2e-16 ***
-## GenHealthGood                    1.0458219  0.0303882  34.415  &lt; 2e-16 ***
-## GenHealthPoor                    1.9028598  0.0420273  45.277  &lt; 2e-16 ***
-## GenHealthVery good               0.4697080  0.0311902  15.059  &lt; 2e-16 ***
-## SleepTime                       -0.0269522  0.0044555  -6.049 1.46e-09 ***
-## AsthmaYes                        0.2783053  0.0196986  14.128  &lt; 2e-16 ***
-## KidneyDiseaseYes                 0.5706389  0.0249972  22.828  &lt; 2e-16 ***
-## SkinCancerYes                    0.1153337  0.0200084   5.764 8.20e-09 ***
+## BMI                              0.0053007  0.0011539   4.594 4.35e-06 ***
+## SmokingNo                       -5.5746872  0.1153822 -48.315  &lt; 2e-16 ***
+## SmokingYes                      -5.1551549  0.1155649 -44.608  &lt; 2e-16 ***
+## AlcoholDrinkingYes              -0.3316721  0.0339552  -9.768  &lt; 2e-16 ***
+## StrokeYes                        1.1912004  0.0229293  51.951  &lt; 2e-16 ***
+## PhysicalHealth                   0.0195954  0.0007698  25.456  &lt; 2e-16 ***
+## MentalHealth                     0.0075626  0.0008889   8.508  &lt; 2e-16 ***
+## DiffWalkingYes                   0.5019729  0.0181650  27.634  &lt; 2e-16 ***
+## SexMale                          0.6836247  0.0146632  46.622  &lt; 2e-16 ***
+## AgeCategory25-29                 0.1620741  0.1272029   1.274 0.202614    
+## AgeCategory30-34                 0.5485796  0.1135244   4.832 1.35e-06 ***
+## AgeCategory35-39                 0.6506505  0.1089476   5.972 2.34e-09 ***
+## AgeCategory40-44                 1.0527956  0.1026033  10.261  &lt; 2e-16 ***
+## AgeCategory45-49                 1.3740203  0.0989929  13.880  &lt; 2e-16 ***
+## AgeCategory50-54                 1.7764278  0.0956018  18.582  &lt; 2e-16 ***
+## AgeCategory55-59                 2.0108040  0.0940943  21.370  &lt; 2e-16 ***
+## AgeCategory60 or older           2.7426808  0.0915817  29.948  &lt; 2e-16 ***
+## RaceAsian                       -0.5101898  0.0856830  -5.954 2.61e-09 ***
+## RaceBlack                       -0.2695800  0.0593319  -4.544 5.53e-06 ***
+## RaceHispanic                    -0.1830843  0.0604234  -3.030 0.002445 ** 
+## RaceOther                       -0.0472344  0.0656788  -0.719 0.472035    
+## RaceWhite                       -0.0527703  0.0530598  -0.995 0.319958    
+## DiabeticNo, borderline diabetes  0.2357310  0.0423474   5.567 2.60e-08 ***
+## DiabeticYes                      0.6435812  0.0168686  38.153  &lt; 2e-16 ***
+## DiabeticYes (during pregnancy)   0.1758200  0.1052278   1.671 0.094751 .  
+## PhysicalActivityYes             -0.1341662  0.0162210  -8.271  &lt; 2e-16 ***
+## SleepTime                       -0.0169990  0.0044303  -3.837 0.000125 ***
+## AsthmaYes                        0.3088846  0.0194780  15.858  &lt; 2e-16 ***
+## KidneyDiseaseYes                 0.7347356  0.0247388  29.700  &lt; 2e-16 ***
+## SkinCancerYes                    0.2499122  0.0193785  12.896  &lt; 2e-16 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
 ##     Null deviance: 421165  on 303806  degrees of freedom
-## Residual deviance: 137834  on 303768  degrees of freedom
-## AIC: 137910
+## Residual deviance: 143059  on 303776  degrees of freedom
+## AIC: 143119
 ## 
 ## Number of Fisher Scoring iterations: 7</code></pre>
-<pre><code>## [1] 137910</code></pre>
-<pre><code>## [1] 138313.7</code></pre>
 <pre><code>## $Confusion_Matrix
 ##      Predicted
 ## True     No   Yes
-##   No  14504   116
-##   Yes  1201   168
+##   No  14518   102
+##   Yes  1230   139
 ## 
 ## $Misclassification_Rate
-## [1] 0.08236913</code></pre>
+## [1] 0.08330727</code></pre>
+<pre><code>##                        GVIF Df GVIF^(1/(2*Df))
+## BMI               24.042940  1        4.903360
+## Smoking          280.176798  2        4.091269
+## AlcoholDrinking    1.064948  1        1.031963
+## Stroke             1.158662  1        1.076411
+## PhysicalHealth     1.898754  1        1.377953
+## MentalHealth       1.494155  1        1.222356
+## DiffWalking        2.044143  1        1.429735
+## Sex                2.472835  1        1.572525
+## AgeCategory      191.236166  8        1.388667
+## Race              59.817327  5        1.505507
+## Diabetic           1.661450  3        1.088298
+## PhysicalActivity   3.583092  1        1.892906
+## SleepTime         21.260772  1        4.610940
+## Asthma             1.261453  1        1.123144
+## KidneyDisease      1.150724  1        1.072718
+## SkinCancer         1.270353  1        1.127099</code></pre>
 <p>The variables that are not statistically significant are AgeCategory 25-29, RaceOther, and RaceWhite of the significance level is at 0.1. The variable that is not statistically significant if the significance level is 0.05 DiabeticYes (during pregnancy). The variable that isn’t statistically significant if the significance level is 0.001 is RaceHispanic. The misclassification rate is 0.08330727 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
 </div>
 <div id="males-removed" class="section level2">
 <h2>Males removed</h2>
-<pre><code>## 
-## Call:
-## glm(formula = HeartDisease ~ . - 1, family = &quot;binomial&quot;, data = no.male.training.df)
-## 
-## Deviance Residuals: 
-##     Min       1Q   Median       3Q      Max  
-## -2.0086  -0.4243  -0.2527  -0.1312   3.5658  
-## 
-## Coefficients:
-##                                   Estimate Std. Error z value Pr(&gt;|z|)    
-## BMI                              0.0095772  0.0015174   6.312 2.76e-10 ***
-## SmokingNo                       -5.9258926  0.1540762 -38.461  &lt; 2e-16 ***
-## SmokingYes                      -5.5006480  0.1542697 -35.656  &lt; 2e-16 ***
-## AlcoholDrinkingYes              -0.2256817  0.0451344  -5.000 5.73e-07 ***
-## StrokeYes                        1.0613471  0.0301893  35.156  &lt; 2e-16 ***
-## PhysicalHealth                   0.0035120  0.0011551   3.040  0.00236 ** 
-## MentalHealth                     0.0005091  0.0011791   0.432  0.66592    
-## DiffWalkingYes                   0.1441062  0.0242098   5.952 2.64e-09 ***
-## AgeCategory25-29                 0.0324590  0.1707256   0.190  0.84921    
-## AgeCategory30-34                 0.3327496  0.1534588   2.168  0.03013 *  
-## AgeCategory35-39                 0.5896015  0.1428801   4.127 3.68e-05 ***
-## AgeCategory40-44                 0.9086270  0.1354965   6.706 2.00e-11 ***
-## AgeCategory45-49                 1.2570438  0.1304004   9.640  &lt; 2e-16 ***
-## AgeCategory50-54                 1.7101636  0.1256080  13.615  &lt; 2e-16 ***
-## AgeCategory55-59                 1.9267605  0.1237634  15.568  &lt; 2e-16 ***
-## AgeCategory60-64                 2.1915371  0.1226867  17.863  &lt; 2e-16 ***
-## AgeCategory65-69                 2.3898381  0.1223724  19.529  &lt; 2e-16 ***
-## AgeCategory70-74                 2.6413383  0.1222838  21.600  &lt; 2e-16 ***
-## AgeCategory75-79                 2.8442929  0.1229315  23.137  &lt; 2e-16 ***
-## AgeCategory80 or older           3.0788855  0.1226077  25.112  &lt; 2e-16 ***
-## RaceAsian                       -0.5393059  0.1130561  -4.770 1.84e-06 ***
-## RaceBlack                       -0.3515113  0.0774090  -4.541 5.60e-06 ***
-## RaceHispanic                    -0.2042893  0.0771868  -2.647  0.00813 ** 
-## RaceOther                       -0.0002706  0.0843385  -0.003  0.99744    
-## RaceWhite                       -0.0749135  0.0689262  -1.087  0.27710    
-## DiabeticNo, borderline diabetes  0.1796249  0.0557979   3.219  0.00129 ** 
-## DiabeticYes                      0.4862336  0.0224098  21.697  &lt; 2e-16 ***
-## DiabeticYes (during pregnancy)  -0.2728868  0.1411253  -1.934  0.05316 .  
-## PhysicalActivityYes              0.0643172  0.0214530   2.998  0.00272 ** 
-## GenHealthFair                    1.5120092  0.0441770  34.226  &lt; 2e-16 ***
-## GenHealthGood                    1.0390469  0.0398378  26.082  &lt; 2e-16 ***
-## GenHealthPoor                    1.9323672  0.0549854  35.143  &lt; 2e-16 ***
-## GenHealthVery good               0.4982773  0.0407337  12.233  &lt; 2e-16 ***
-## SleepTime                       -0.0245650  0.0057664  -4.260 2.04e-05 ***
-## AsthmaYes                        0.2185872  0.0254195   8.599  &lt; 2e-16 ***
-## KidneyDiseaseYes                 0.5512027  0.0327311  16.840  &lt; 2e-16 ***
-## SkinCancerYes                    0.1972819  0.0259105   7.614 2.66e-14 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## (Dispersion parameter for binomial family taken to be 1)
-## 
-##     Null deviance: 243296  on 175501  degrees of freedom
-## Residual deviance:  81230  on 175464  degrees of freedom
-## AIC: 81304
-## 
-## Number of Fisher Scoring iterations: 7</code></pre>
-<pre><code>## [1] 81304.28</code></pre>
-<pre><code>## [1] 81677.07</code></pre>
+<pre><code>##                                    Estimate  Std. Error     z value
+## BMI                             0.006959428 0.001489682  4.67175456
+## AgeCategory25-29                0.059703079 0.170498483  0.35016780
+## AgeCategory30-34                0.365536914 0.153238122  2.38541760
+## RaceBlack                      -0.291037065 0.077063155 -3.77660461
+## RaceHispanic                   -0.134971179 0.076810215 -1.75720350
+## RaceOther                       0.001808614 0.083982607  0.02153557
+## RaceWhite                      -0.074589850 0.068603772 -1.08725582
+## DiabeticYes (during pregnancy) -0.241266851 0.139906118 -1.72449107
+## SleepTime                      -0.017378247 0.005746136 -3.02433644
+##                                    Pr(&gt;|z|)
+## BMI                            2.986377e-06
+## AgeCategory25-29               7.262128e-01
+## AgeCategory30-34               1.705974e-02
+## RaceBlack                      1.589808e-04
+## RaceHispanic                   7.888313e-02
+## RaceOther                      9.828184e-01
+## RaceWhite                      2.769238e-01
+## DiabeticYes (during pregnancy) 8.461923e-02
+## SleepTime                      2.491792e-03</code></pre>
+<pre><code>##                        GVIF Df GVIF^(1/(2*Df))
+## BMI               23.530011  1        4.850774
+## Smoking          277.090627  2        4.079956
+## AlcoholDrinking    1.065648  1        1.032302
+## Stroke             1.161518  1        1.077738
+## PhysicalHealth     1.903658  1        1.379731
+## MentalHealth       1.481831  1        1.217305
+## DiffWalking        2.035424  1        1.426683
+## AgeCategory      193.102431  8        1.389510
+## Race              59.121105  5        1.503745
+## Diabetic           1.660733  3        1.088220
+## PhysicalActivity   3.541127  1        1.881788
+## SleepTime         21.008158  1        4.583466
+## Asthma             1.255527  1        1.120503
+## KidneyDisease      1.150402  1        1.072568
+## SkinCancer         1.269888  1        1.126893</code></pre>
 <pre><code>## $Confusion_Matrix
 ##      Predicted
 ## True      No    Yes
-##   No  283448   1995
-##   Yes  24333   2323
+##   No  283743   1700
+##   Yes  24778   1878
 ## 
 ## $Misclassification_Rate
-## [1] 0.08435785</code></pre>
-<p>The variables that are not statistically significant are AgeCategory25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy). Sleep time and Race Hispanic are statistically significant only if the significance level is 0.01. Ages 35-39 is statistically significant only if the significance level is 0.001.The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
+## [1] 0.08483846</code></pre>
+<p>The variables that are not statistically significant are RaceHispanic, Race Other, and Diabetic Yes (during pregnancy). Sleep time is statistically significant only if the significance level is 0.001. AgeCategory 25-29 and RaceBlack are statistically significant only if the level of significance is 0.05. RaceWhite and BMI are statistically significant only if the significance level is 0.01. SleepTime and Ages30-34 are statistically signifcant only if the level of significance is 0.001. The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
 </div>
 <div id="females-removed" class="section level2">
 <h2>Females Removed</h2>
-<pre><code>## 
-## Call:
-## glm(formula = HeartDisease ~ . - 1, family = &quot;binomial&quot;, data = no.female.training.df)
-## 
-## Deviance Residuals: 
-##     Min       1Q   Median       3Q      Max  
-## -2.1104  -0.4177  -0.2516  -0.1369   3.4351  
-## 
-## Coefficients:
-##                                  Estimate Std. Error z value Pr(&gt;|z|)    
-## BMI                              0.010151   0.001577   6.438 1.21e-10 ***
-## SmokingNo                       -5.821217   0.157995 -36.844  &lt; 2e-16 ***
-## SmokingYes                      -5.365339   0.158259 -33.902  &lt; 2e-16 ***
-## AlcoholDrinkingYes              -0.229248   0.046857  -4.892 9.96e-07 ***
-## StrokeYes                        1.044547   0.031910  32.734  &lt; 2e-16 ***
-## PhysicalHealth                   0.003281   0.001204   2.725 0.006423 ** 
-## MentalHealth                     0.001716   0.001231   1.394 0.163320    
-## DiffWalkingYes                   0.150110   0.025346   5.923 3.17e-09 ***
-## AgeCategory25-29                 0.177517   0.165338   1.074 0.282975    
-## AgeCategory30-34                 0.451178   0.150273   3.002 0.002679 ** 
-## AgeCategory35-39                 0.406559   0.146963   2.766 0.005668 ** 
-## AgeCategory40-44                 0.875988   0.136404   6.422 1.34e-10 ***
-## AgeCategory45-49                 1.154505   0.131791   8.760  &lt; 2e-16 ***
-## AgeCategory50-54                 1.500132   0.127599  11.757  &lt; 2e-16 ***
-## AgeCategory55-59                 1.778123   0.125223  14.200  &lt; 2e-16 ***
-## AgeCategory60-64                 2.004878   0.124037  16.164  &lt; 2e-16 ***
-## AgeCategory65-69                 2.255533   0.123569  18.253  &lt; 2e-16 ***
-## AgeCategory70-74                 2.532292   0.123437  20.515  &lt; 2e-16 ***
-## AgeCategory75-79                 2.703001   0.124233  21.758  &lt; 2e-16 ***
-## AgeCategory80 or older           2.950068   0.123805  23.828  &lt; 2e-16 ***
-## RaceAsian                       -0.432659   0.114294  -3.785 0.000153 ***
-## RaceBlack                       -0.390811   0.082227  -4.753 2.01e-06 ***
-## RaceHispanic                    -0.213448   0.081571  -2.617 0.008878 ** 
-## RaceOther                       -0.046602   0.089780  -0.519 0.603718    
-## RaceWhite                       -0.047956   0.073200  -0.655 0.512381    
-## DiabeticNo, borderline diabetes  0.130859   0.058137   2.251 0.024393 *  
-## DiabeticYes                      0.537707   0.023414  22.965  &lt; 2e-16 ***
-## DiabeticYes (during pregnancy)  -0.183824   0.147827  -1.244 0.213681    
-## PhysicalActivityYes              0.053878   0.022492   2.395 0.016602 *  
-## GenHealthFair                    1.483563   0.045975  32.269  &lt; 2e-16 ***
-## GenHealthGood                    1.022115   0.041417  24.679  &lt; 2e-16 ***
-## GenHealthPoor                    1.868987   0.057358  32.584  &lt; 2e-16 ***
-## GenHealthVery good               0.387143   0.042714   9.064  &lt; 2e-16 ***
-## SleepTime                       -0.021859   0.006137  -3.562 0.000368 ***
-## AsthmaYes                        0.178191   0.026936   6.615 3.71e-11 ***
-## KidneyDiseaseYes                 0.573376   0.034099  16.815  &lt; 2e-16 ***
-## SkinCancerYes                    0.142452   0.027651   5.152 2.58e-07 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## (Dispersion parameter for binomial family taken to be 1)
-## 
-##     Null deviance: 222199  on 160283  degrees of freedom
-## Residual deviance:  73888  on 160246  degrees of freedom
-## AIC: 73962
-## 
-## Number of Fisher Scoring iterations: 7</code></pre>
-<pre><code>## [1] 73961.81</code></pre>
-<pre><code>## [1] 74331.24</code></pre>
+<pre><code>##                                   Estimate  Std. Error    z value    Pr(&gt;|z|)
+## AgeCategory25-29                0.21546550 0.165082139  1.3052018 0.191824142
+## AgeCategory35-39                0.45779654 0.146704182  3.1205418 0.001805187
+## RaceHispanic                   -0.16585358 0.081615084 -2.0321437 0.042139109
+## RaceOther                      -0.04627917 0.089738262 -0.5157127 0.606055051
+## RaceWhite                      -0.05163235 0.073252154 -0.7048578 0.480898732
+## DiabeticYes (during pregnancy) -0.16744629 0.146249754 -1.1449338 0.252236577
+## SleepTime                      -0.01298269 0.006127408 -2.1187905 0.034108176</code></pre>
+<pre><code>##                        GVIF Df GVIF^(1/(2*Df))
+## BMI               23.183123  1        4.814886
+## Smoking          266.054248  2        4.038709
+## AlcoholDrinking    1.066255  1        1.032596
+## Stroke             1.155668  1        1.075020
+## PhysicalHealth     1.893208  1        1.375939
+## MentalHealth       1.483949  1        1.218175
+## DiffWalking        2.034946  1        1.426515
+## AgeCategory      179.358240  8        1.383113
+## Race              61.423676  5        1.509502
+## Diabetic           1.659244  3        1.088057
+## PhysicalActivity   3.554801  1        1.885418
+## SleepTime         21.665905  1        4.654665
+## Asthma             1.251559  1        1.118731
+## KidneyDisease      1.152592  1        1.073589
+## SkinCancer         1.261945  1        1.123363</code></pre>
 <pre><code>## $Confusion_Matrix
 ##      Predicted
 ## True      No    Yes
-##   No  282869   2049
-##   Yes  24185   2399
+##   No  283106   1812
+##   Yes  24610   1974
 ## 
 ## $Misclassification_Rate
-## [1] 0.08421776</code></pre>
-<p>The variables that are not statistically significant are RaceHispanic, Race Other, and Diabetic Yes (during pregnancy). Sleep time is statistically significant only if the significance level is 0.001.AgeCategory 25-29 and RaceBlack are statistically significant only if the level of significance is 0.05. RaceWhite and BMI are statistically significant only if the significance level is 0.01. Sleept time and Ages30-34 are statistically signifcant only if the level of significance is 0.001. The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
+## [1] 0.08482129</code></pre>
+<p>The variables that are not statistically significant are AgeCategory25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy). Sleep time and Race Hispanic are statistically significant only if the significance level is 0.01. Ages 35-39 is statistically significant only if the significance level is 0.001. The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
 </div>
 <div id="smoker" class="section level2">
 <h2>Smoker</h2>
-<pre><code>## 
-## Call:
-## glm(formula = HeartDisease ~ . - 1, family = &quot;binomial&quot;, data = smoker.training.df)
-## 
-## Deviance Residuals: 
-##     Min       1Q   Median       3Q      Max  
-## -2.0724  -0.4103  -0.2461  -0.1307   3.6197  
-## 
-## Coefficients:
-##                                  Estimate Std. Error z value Pr(&gt;|z|)    
-## BMI                              0.007722   0.001475   5.237 1.63e-07 ***
-## AlcoholDrinkingNo               -6.243988   0.150890 -41.381  &lt; 2e-16 ***
-## AlcoholDrinkingYes              -6.492307   0.156421 -41.505  &lt; 2e-16 ***
-## StrokeYes                        1.008465   0.029354  34.356  &lt; 2e-16 ***
-## PhysicalHealth                   0.003262   0.001110   2.940 0.003285 ** 
-## MentalHealth                     0.004724   0.001138   4.150 3.33e-05 ***
-## DiffWalkingYes                   0.245989   0.023333  10.543  &lt; 2e-16 ***
-## SexMale                          0.753068   0.018616  40.454  &lt; 2e-16 ***
-## AgeCategory25-29                 0.316933   0.161566   1.962 0.049805 *  
-## AgeCategory30-34                 0.691022   0.145943   4.735 2.19e-06 ***
-## AgeCategory35-39                 0.809361   0.140462   5.762 8.31e-09 ***
-## AgeCategory40-44                 1.188505   0.132932   8.941  &lt; 2e-16 ***
-## AgeCategory45-49                 1.476592   0.128729  11.471  &lt; 2e-16 ***
-## AgeCategory50-54                 1.913447   0.124326  15.391  &lt; 2e-16 ***
-## AgeCategory55-59                 2.128940   0.122604  17.364  &lt; 2e-16 ***
-## AgeCategory60-64                 2.398855   0.121517  19.741  &lt; 2e-16 ***
-## AgeCategory65-69                 2.665287   0.121159  21.998  &lt; 2e-16 ***
-## AgeCategory70-74                 2.959222   0.121071  24.442  &lt; 2e-16 ***
-## AgeCategory75-79                 3.167628   0.121717  26.025  &lt; 2e-16 ***
-## AgeCategory80 or older           3.381578   0.121497  27.833  &lt; 2e-16 ***
-## RaceAsian                       -0.770438   0.109519  -7.035 2.00e-12 ***
-## RaceBlack                       -0.419372   0.073708  -5.690 1.27e-08 ***
-## RaceHispanic                    -0.287451   0.073648  -3.903 9.50e-05 ***
-## RaceOther                       -0.087645   0.080902  -1.083 0.278657    
-## RaceWhite                       -0.108542   0.065426  -1.659 0.097114 .  
-## DiabeticNo, borderline diabetes  0.128937   0.053727   2.400 0.016401 *  
-## DiabeticYes                      0.489640   0.021468  22.808  &lt; 2e-16 ***
-## DiabeticYes (during pregnancy)   0.130808   0.133522   0.980 0.327248    
-## PhysicalActivityYes              0.005360   0.020617   0.260 0.794877    
-## GenHealthFair                    1.533958   0.041797  36.701  &lt; 2e-16 ***
-## GenHealthGood                    1.032746   0.037634  27.442  &lt; 2e-16 ***
-## GenHealthPoor                    1.941926   0.052162  37.229  &lt; 2e-16 ***
-## GenHealthVery good               0.467999   0.038610  12.121  &lt; 2e-16 ***
-## SleepTime                       -0.027684   0.005604  -4.941 7.79e-07 ***
-## AsthmaYes                        0.269109   0.024672  10.908  &lt; 2e-16 ***
-## KidneyDiseaseYes                 0.532130   0.031456  16.917  &lt; 2e-16 ***
-## SkinCancerYes                    0.091034   0.025214   3.610 0.000306 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## (Dispersion parameter for binomial family taken to be 1)
-## 
-##     Null deviance: 269561  on 194447  degrees of freedom
-## Residual deviance:  88090  on 194410  degrees of freedom
-## AIC: 88164
-## 
-## Number of Fisher Scoring iterations: 7</code></pre>
-<pre><code>## [1] 88163.53</code></pre>
-<pre><code>## [1] 88540.11</code></pre>
+<pre><code>##                                  Estimate Std. Error   z value      Pr(&gt;|z|)
+## DiffWalkingYes                  0.5432635 0.02272321 23.907865 2.537009e-126
+## AgeCategory25-29                0.3524377 0.16133441  2.184517  2.892430e-02
+## RaceHispanic                   -0.2574145 0.07325513 -3.513946  4.415033e-04
+## RaceOther                      -0.1090697 0.08045555 -1.355651  1.752101e-01
+## RaceWhite                      -0.1306047 0.06505090 -2.007731  4.467190e-02
+## DiabeticYes (during pregnancy)  0.1474092 0.13224272  1.114687  2.649847e-01</code></pre>
+<pre><code>##                        GVIF Df GVIF^(1/(2*Df))
+## BMI               24.217959  1        4.921175
+## AlcoholDrinking  283.712002  2        4.104114
+## Stroke             1.155477  1        1.074931
+## PhysicalHealth     1.900465  1        1.378573
+## MentalHealth       1.481070  1        1.216992
+## DiffWalking        2.053884  1        1.433138
+## Sex                2.456940  1        1.567463
+## AgeCategory      206.887922  8        1.395512
+## Race              57.274661  5        1.498981
+## Diabetic           1.671442  3        1.089386
+## PhysicalActivity   3.557587  1        1.886157
+## SleepTime         21.454973  1        4.631951
+## Asthma             1.262247  1        1.123497
+## KidneyDisease      1.151531  1        1.073094
+## SkinCancer         1.265450  1        1.124922</code></pre>
 <pre><code>## $Confusion_Matrix
 ##      Predicted
 ## True      No    Yes
-##   No  284239   2264
-##   Yes  24126   2606
+##   No  284695   1808
+##   Yes  24674   2058
 ## 
 ## $Misclassification_Rate
-## [1] 0.08424984</code></pre>
-<p>The variables that are not statistically significant are BMI, AgeCategory 25-29, RaceOther, RaceWhite, and Diabetic Yes(during pregnancy) is the level of significance is 0.1. Sleeptime is only statistically significant if the level of significance is 0.05. AgeCategory30-34 and RaceHispanic is statistically significant only if the significance level is 0.001.The misclassification rate is 0.08473544 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
+## [1] 0.08454355</code></pre>
+<p>The variables that are not statistically significant are BMI, AgeCategory 25-29, RaceOther, RaceWhite, and Diabetic Yes(during pregnancy) is the level of significance is 0.1. SleepTime is only statistically significant if the level of significance is 0.05. AgeCategory30-34 and RaceHispanic is statistically significant only if the significance level is 0.001.The misclassification rate is 0.08473544 which means that the model is fairly accurate. BMI, AlcoholDrinking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
 </div>
 <div id="non-smoker" class="section level2">
 <h2>Non-Smoker</h2>
-<pre><code>## 
-## Call:
-## glm(formula = HeartDisease ~ . - 1, family = &quot;binomial&quot;, data = non.smoker.training.df)
-## 
-## Deviance Residuals: 
-##     Min       1Q   Median       3Q      Max  
-## -2.0848  -0.4155  -0.2501  -0.1335   3.5609  
-## 
-## Coefficients:
-##                                  Estimate Std. Error z value Pr(&gt;|z|)    
-## BMI                              0.005840   0.001707   3.421 0.000624 ***
-## AlcoholDrinkingNo               -6.020951   0.164565 -36.587  &lt; 2e-16 ***
-## AlcoholDrinkingYes              -6.099750   0.170405 -35.796  &lt; 2e-16 ***
-## StrokeYes                        1.129801   0.033709  33.517  &lt; 2e-16 ***
-## PhysicalHealth                   0.003635   0.001286   2.826 0.004710 ** 
-## MentalHealth                     0.007882   0.001309   6.022 1.72e-09 ***
-## DiffWalkingYes                   0.207701   0.027139   7.653 1.96e-14 ***
-## SexMale                          0.735417   0.021612  34.028  &lt; 2e-16 ***
-## AgeCategory25-29                 0.078542   0.175598   0.447 0.654670    
-## AgeCategory30-34                 0.371511   0.159355   2.331 0.019735 *  
-## AgeCategory35-39                 0.542970   0.150079   3.618 0.000297 ***
-## AgeCategory40-44                 0.976806   0.139361   7.009 2.40e-12 ***
-## AgeCategory45-49                 1.324018   0.133587   9.911  &lt; 2e-16 ***
-## AgeCategory50-54                 1.649775   0.129139  12.775  &lt; 2e-16 ***
-## AgeCategory55-59                 1.961462   0.126476  15.509  &lt; 2e-16 ***
-## AgeCategory60-64                 2.198359   0.125312  17.543  &lt; 2e-16 ***
-## AgeCategory65-69                 2.385030   0.124967  19.085  &lt; 2e-16 ***
-## AgeCategory70-74                 2.673027   0.124868  21.407  &lt; 2e-16 ***
-## AgeCategory75-79                 2.889988   0.125751  22.982  &lt; 2e-16 ***
-## AgeCategory80 or older           3.146218   0.125410  25.088  &lt; 2e-16 ***
-## RaceAsian                       -0.461966   0.120216  -3.843 0.000122 ***
-## RaceBlack                       -0.375809   0.088675  -4.238 2.25e-05 ***
-## RaceHispanic                    -0.334831   0.087703  -3.818 0.000135 ***
-## RaceOther                       -0.073068   0.096234  -0.759 0.447690    
-## RaceWhite                       -0.129434   0.079500  -1.628 0.103503    
-## DiabeticNo, borderline diabetes  0.139585   0.061767   2.260 0.023831 *  
-## DiabeticYes                      0.447312   0.024993  17.898  &lt; 2e-16 ***
-## DiabeticYes (during pregnancy)   0.110679   0.159959   0.692 0.488987    
-## PhysicalActivityYes             -0.007048   0.023959  -0.294 0.768628    
-## GenHealthFair                    1.591293   0.049279  32.292  &lt; 2e-16 ***
-## GenHealthGood                    1.133708   0.044450  25.505  &lt; 2e-16 ***
-## GenHealthPoor                    1.944277   0.061693  31.515  &lt; 2e-16 ***
-## GenHealthVery good               0.509739   0.045802  11.129  &lt; 2e-16 ***
-## SleepTime                       -0.022725   0.006469  -3.513 0.000443 ***
-## AsthmaYes                        0.330183   0.028553  11.564  &lt; 2e-16 ***
-## KidneyDiseaseYes                 0.598215   0.036430  16.421  &lt; 2e-16 ***
-## SkinCancerYes                    0.145900   0.029314   4.977 6.45e-07 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## (Dispersion parameter for binomial family taken to be 1)
-## 
-##     Null deviance: 195935  on 141337  degrees of freedom
-## Residual deviance:  65148  on 141300  degrees of freedom
-## AIC: 65222
-## 
-## Number of Fisher Scoring iterations: 7</code></pre>
-<pre><code>## [1] 65222.29</code></pre>
-<pre><code>## [1] 65587.07</code></pre>
+<pre><code>##                        Estimate Std. Error    z value      Pr(&gt;|z|)
+## SexMale              0.71332374 0.02119837 33.6499402 3.124214e-248
+## AgeCategory25-29     0.12137331 0.17532789  0.6922647  4.887711e-01
+## RaceBlack           -0.30249178 0.08867072 -3.4114055  6.462890e-04
+## RaceHispanic        -0.26166325 0.08771128 -2.9832337  2.852201e-03
+## RaceOther           -0.04560093 0.09612895 -0.4743725  6.352343e-01
+## DiabeticYes          0.61524919 0.02460570 25.0043309 5.485053e-138
+## PhysicalActivityYes -0.17496303 0.02356908 -7.4234131  1.141400e-13</code></pre>
+<pre><code>##                        GVIF Df GVIF^(1/(2*Df))
+## BMI               24.066593  1        4.905771
+## AlcoholDrinking  249.531595  2        3.974490
+## Stroke             1.161671  1        1.077809
+## PhysicalHealth     1.890182  1        1.374839
+## MentalHealth       1.495704  1        1.222990
+## DiffWalking        2.033025  1        1.425842
+## Sex                2.424500  1        1.557080
+## AgeCategory      161.788531  8        1.374229
+## Race              64.044602  5        1.515822
+## Diabetic           1.654473  3        1.087535
+## PhysicalActivity   3.561268  1        1.887132
+## SleepTime         21.214586  1        4.605929
+## Asthma             1.263642  1        1.124118
+## KidneyDisease      1.151567  1        1.073111
+## SkinCancer         1.271841  1        1.127759</code></pre>
 <pre><code>## $Confusion_Matrix
 ##      Predicted
 ## True      No    Yes
-##   No  281389   2469
-##   Yes  23717   2791
+##   No  281811   2047
+##   Yes  24252   2256
 ## 
 ## $Misclassification_Rate
-## [1] 0.08437136</code></pre>
-<p>The variables that are not statistically significant are AgeCategory 25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy) if the level of significance is 0.1. MentalHealth and RaceHispanic are statistically significant if the level of significance is 0.01. The misclassification rate is 0.08475112 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
-</div>
-<div id="stroke" class="section level2">
-<h2>Stroke</h2>
-<pre><code>## 
-## Call:
-## glm(formula = HeartDisease ~ . - 1, family = &quot;binomial&quot;, data = stroke.training.df)
-## 
-## Deviance Residuals: 
-##     Min       1Q   Median       3Q      Max  
-## -2.0324  -0.4192  -0.2474  -0.1293   3.6203  
-## 
-## Coefficients:
-##                                   Estimate Std. Error z value Pr(&gt;|z|)    
-## BMI                              0.0066448  0.0011554   5.751 8.86e-09 ***
-## SmokingNo                       -6.2593103  0.1159414 -53.987  &lt; 2e-16 ***
-## SmokingYes                      -5.8932505  0.1162586 -50.691  &lt; 2e-16 ***
-## AlcoholDrinkingYes              -0.2586744  0.0340796  -7.590 3.19e-14 ***
-## PhysicalHealth                   0.0033537  0.0008701   3.854 0.000116 ***
-## MentalHealth                     0.0055252  0.0008884   6.219 4.99e-10 ***
-## DiffWalkingYes                   0.2600678  0.0182668  14.237  &lt; 2e-16 ***
-## SexMale                          0.7030698  0.0147060  47.808  &lt; 2e-16 ***
-## AgeCategory25-29                 0.1118252  0.1263448   0.885 0.376113    
-## AgeCategory30-34                 0.4822023  0.1126557   4.280 1.87e-05 ***
-## AgeCategory35-39                 0.6040905  0.1077209   5.608 2.05e-08 ***
-## AgeCategory40-44                 0.9937899  0.1015248   9.789  &lt; 2e-16 ***
-## AgeCategory45-49                 1.3511416  0.0975780  13.847  &lt; 2e-16 ***
-## AgeCategory50-54                 1.7489173  0.0942838  18.549  &lt; 2e-16 ***
-## AgeCategory55-59                 2.0034021  0.0927523  21.599  &lt; 2e-16 ***
-## AgeCategory60-64                 2.2743493  0.0918924  24.750  &lt; 2e-16 ***
-## AgeCategory65-69                 2.5175898  0.0916243  27.477  &lt; 2e-16 ***
-## AgeCategory70-74                 2.8021001  0.0915676  30.601  &lt; 2e-16 ***
-## AgeCategory75-79                 3.0244243  0.0920907  32.842  &lt; 2e-16 ***
-## AgeCategory80 or older           3.2895920  0.0918328  35.822  &lt; 2e-16 ***
-## RaceAsian                       -0.5406341  0.0844968  -6.398 1.57e-10 ***
-## RaceBlack                       -0.3198662  0.0579895  -5.516 3.47e-08 ***
-## RaceHispanic                    -0.3050887  0.0591768  -5.156 2.53e-07 ***
-## RaceOther                       -0.0574778  0.0643221  -0.894 0.371540    
-## RaceWhite                       -0.1006844  0.0518423  -1.942 0.052121 .  
-## DiabeticNo, borderline diabetes  0.1311246  0.0421887   3.108 0.001883 ** 
-## DiabeticYes                      0.4964986  0.0168572  29.453  &lt; 2e-16 ***
-## DiabeticYes (during pregnancy)   0.1164586  0.1065155   1.093 0.274241    
-## PhysicalActivityYes              0.0167308  0.0162244   1.031 0.302443    
-## GenHealthFair                    1.5826630  0.0332854  47.548  &lt; 2e-16 ***
-## GenHealthGood                    1.0750961  0.0300443  35.784  &lt; 2e-16 ***
-## GenHealthPoor                    2.0001224  0.0413093  48.418  &lt; 2e-16 ***
-## GenHealthVery good               0.4799644  0.0308549  15.556  &lt; 2e-16 ***
-## SleepTime                       -0.0220530  0.0043829  -5.032 4.86e-07 ***
-## AsthmaYes                        0.2927014  0.0193913  15.094  &lt; 2e-16 ***
-## KidneyDiseaseYes                 0.5972722  0.0245560  24.323  &lt; 2e-16 ***
-## SkinCancerYes                    0.1228170  0.0196823   6.240 4.38e-10 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## (Dispersion parameter for binomial family taken to be 1)
-## 
-##     Null deviance: 427433  on 308328  degrees of freedom
-## Residual deviance: 141859  on 308291  degrees of freedom
-## AIC: 141933
-## 
-## Number of Fisher Scoring iterations: 7</code></pre>
-<pre><code>## [1] 141933.1</code></pre>
-<pre><code>## [1] 142326.7</code></pre>
-<pre><code>## $Confusion_Matrix
-##      Predicted
-## True      No    Yes
-##   No  289889   1990
-##   Yes  25100   2214
-## 
-## $Misclassification_Rate
-## [1] 0.08487028</code></pre>
-<p>The variables that are not statistically significant are AgeCategory 25-29 and Hispanic if the level of significance is 0.1. BMI and RaceWhite are only statistically significant if the level of significance is 0.05. Sleeptime is only statistically significant if the level of significance 0.001. The misclassification rate is 0.08525729 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
-</div>
-<div id="non-stroke" class="section level2">
-<h2>Non-Stroke</h2>
-<pre><code>## 
-## Call:
-## glm(formula = HeartDisease ~ . - 1, family = &quot;binomial&quot;, data = non.stroke.training.df)
-## 
-## Deviance Residuals: 
-##     Min       1Q   Median       3Q      Max  
-## -1.8282  -0.4189  -0.2601  -0.1471   3.3873  
-## 
-## Coefficients:
-##                                  Estimate Std. Error z value Pr(&gt;|z|)    
-## BMI                              0.008802   0.003886   2.265 0.023520 *  
-## SmokingNo                       -5.682039   0.369638 -15.372  &lt; 2e-16 ***
-## SmokingYes                      -5.361078   0.370440 -14.472  &lt; 2e-16 ***
-## AlcoholDrinkingYes              -0.211469   0.110846  -1.908 0.056420 .  
-## PhysicalHealth                   0.007779   0.002801   2.777 0.005490 ** 
-## MentalHealth                     0.011021   0.002874   3.834 0.000126 ***
-## DiffWalkingYes                   0.331769   0.060431   5.490 4.02e-08 ***
-## SexMale                          0.684645   0.049176  13.922  &lt; 2e-16 ***
-## AgeCategory25-29                 0.460401   0.352096   1.308 0.191009    
-## AgeCategory30-34                 0.264578   0.355831   0.744 0.457148    
-## AgeCategory35-39                 0.535549   0.331594   1.615 0.106294    
-## AgeCategory40-44                 1.045350   0.300854   3.475 0.000512 ***
-## AgeCategory45-49                 1.195886   0.297302   4.022 5.76e-05 ***
-## AgeCategory50-54                 1.591871   0.285951   5.567 2.59e-08 ***
-## AgeCategory55-59                 1.940306   0.280267   6.923 4.42e-12 ***
-## AgeCategory60-64                 1.988959   0.279062   7.127 1.02e-12 ***
-## AgeCategory65-69                 2.206942   0.278164   7.934 2.12e-15 ***
-## AgeCategory70-74                 2.557286   0.277947   9.201  &lt; 2e-16 ***
-## AgeCategory75-79                 2.818396   0.279986  10.066  &lt; 2e-16 ***
-## AgeCategory80 or older           3.090290   0.279417  11.060  &lt; 2e-16 ***
-## RaceAsian                       -0.917713   0.256383  -3.579 0.000344 ***
-## RaceBlack                       -0.744545   0.220591  -3.375 0.000738 ***
-## RaceHispanic                    -0.440081   0.187404  -2.348 0.018859 *  
-## RaceOther                       -0.306122   0.204333  -1.498 0.134093    
-## RaceWhite                       -0.431759   0.180922  -2.386 0.017012 *  
-## DiabeticNo, borderline diabetes  0.186780   0.138178   1.352 0.176459    
-## DiabeticYes                      0.492405   0.056134   8.772  &lt; 2e-16 ***
-## DiabeticYes (during pregnancy)   0.204770   0.345434   0.593 0.553322    
-## PhysicalActivityYes              0.011286   0.053209   0.212 0.832020    
-## GenHealthFair                    1.282710   0.107499  11.932  &lt; 2e-16 ***
-## GenHealthGood                    0.900242   0.097191   9.263  &lt; 2e-16 ***
-## GenHealthPoor                    1.684437   0.136487  12.341  &lt; 2e-16 ***
-## GenHealthVery good               0.406583   0.100666   4.039 5.37e-05 ***
-## SleepTime                       -0.023274   0.014698  -1.584 0.113304    
-## AsthmaYes                        0.402596   0.062596   6.432 1.26e-10 ***
-## KidneyDiseaseYes                 0.614180   0.082150   7.476 7.64e-14 ***
-## SkinCancerYes                    0.124603   0.071109   1.752 0.079727 .  
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## (Dispersion parameter for binomial family taken to be 1)
-## 
-##     Null deviance: 38062  on 27456  degrees of freedom
-## Residual deviance: 12840  on 27419  degrees of freedom
-## AIC: 12914
-## 
-## Number of Fisher Scoring iterations: 7</code></pre>
-<pre><code>## [1] 12914.23</code></pre>
-<pre><code>## [1] 13218.39</code></pre>
-<pre><code>## $Confusion_Matrix
-##      Predicted
-## True      No    Yes
-##   No  276769   1713
-##   Yes  24003   1923
-## 
-## $Misclassification_Rate
-## [1] 0.08447873</code></pre>
-<p>The variables that are not statistically significant are BMI, AgeCategory 25-29, AgeCategory 30-34, AgeCategory 35-39, RaceOther and sleeptime if the level of significance is 0.1. Hispanic, RaceWhite, DiabeticYes (during pregnancy), PhysicallyActiveYes are statistically significant if the level of significance is 0.01. AlcoholDrinkingYes and RaceBlack are not statistically significant if the level of significance is 0.001. The misclassification rate is 0.08538408 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
+## [1] 0.08473544</code></pre>
+<p>The variables that are not statistically significant are AgeCategory 25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy) if the level of significance is 0.1. MentalHealth and RaceHispanic are statistically significant if the level of significance is 0.01. The misclassification rate is 0.08475112 which means that the model is fairly accurate. BMI, AlcoholDrinking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.</p>
 </div>
 <div id="findings" class="section level2">
 <h2>Findings</h2>
@@ -852,30 +704,18 @@ div.tocify {
 <p>But which models where the best at predicting Heart Disease? And how did the statistical significance of variables change between the models? How do naturally paired models compare to each other.</p>
 <div id="compare-all-models" class="section level3">
 <h3>Compare all models</h3>
-<p>The misclassification error rates only had slight differences between the all the models and all were similarly effective at prediction. Also when comparing AIC, the order of largest to smallest AIC’s are log.reg.stroke, log.reg.full, log.reg.non.stroke, log.reg.smoker,log.reg.no.female,log.reg.no.male, and log.reg.non.smoker. This means that the model where the non smokers were removed from the data set had the best fit model by AIC. This doesn’t mean that we recommend the data set remove all non-smokers from their data sets, but rather that a model with all smokers have the most explanatory power when trying to model predictor variables and heart disease. It seems that whether people are smoking or not effects the model greatly according to AIC. The full model has one of the highest AIC’s compared to the other models which might indicate that the model predictor variables might be confounding variables. As when only giving data from a certain level improves the predictive power of the model. But, in the Full model, there are less variables that are statistically insignificant.</p>
+<p>The Misclassification error rates only had slight differences between the all the models and all were similarly effective at prediction. Also when comparing AIC, the order of largest to smallest AIC’s are log.reg.stroke, log.reg.full, log.reg.non.stroke, log.reg.smoker,log.reg.no.female,log.reg.no.male, and log.reg.non.smoker. This means that the model where the non smokers were removed from the data set had the best fit model by AIC. This doesn’t mean that we reccomend the data set remove all non-smokers from their data sets, but rather that a model with all smokers have the most explanatory power when trying to model predictor variables and heart disease. It seems that whether people are smoking or not effects the model greatly according to AIC. The full model has one of the highest AIC’s compared to the other models which might indicate that the model predictor variables might be confounding variables. As when only giving data from a certain level improves the predictive power of the model. But, in the Full model, there are less variables that are statistically insignificant.</p>
 <p>When comparing the different variables’s statistical significance when predicting Heart Disease many of the variables have had a lot of consistency. Most variables remain statistically significant abnd do not deviate between the models. Certain notable changes are as follows. Ages25-29, RaceOther, RaceWhite,DiabeticYes (while pregnant) and BMI consistently have really low statistical significance across all models. RaceHispanic, Sleeptime ,Ages 30-34 ,and Ages 35-39 intermittenly lose very high statistical significance. MentalHealth only loses statistical significance in the non-smoker only model. Alcohol drinking loses statistical significance in the non-stroke model only. PhysicalActiveYes loses statistical significance in the non-stroke only model. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 across all models.</p>
 </div>
 <div id="compare-pairs-of-models" class="section level3">
 <h3>Compare pairs of models</h3>
 <p>Males and Female models had similar AIC’s and had the mostly the same variables that where less statistically significant and of the same level of significance. They had a similar misclassifcation error rate as well. The models of the two sexes do not vary much from each other meaning their predictive power when looking at development of heart disease is roughly equal.</p>
-<p>Smoker and non-smoker models had the mostly the same variables that where less statistically significant and of the same level of significance. They had a similar misclassifcation error rate as well. The AIC of model with smokers has a much smaller AIC than the model with non-smokers. This means that the data at smokers are a better fit at predicting Heart Disease than the data of non-smokers. So, whether someone smokes or doesn’t, has an effect on the predictive power of the model and may be a confounding variable. This paired with multicollineratiy of smoking/nonsmoking variable may indicate multicollinearity.</p>
-<p>Stroke and non-stroke models had very close AIC’s. They had a similar misclassifcation error rate. The Stroke only model had much fewer statistically insignificant variables than the non-stroke only model. This means that more predictor variables under non-stroke only model are much less predictive of Heart Disease. This might indicate that people who did not have strokes are at less risk of Heart Disease as they have less factors that predict heart disease.</p>
-</div>
-</div>
-<div id="roc-curve" class="section level2">
-<h2>ROC Curve</h2>
-<p><img src="logreg_files/figure-html/unnamed-chunk-8-1.png" width="672" /> There are some threshold cut off points graphed above. By eyeballing the graph, we can see that the threshold is somewhere in the dark blue region since that is closest to 1 on for the true positive rate. The threshold will be somewhere around 0.1 (based on the one of the cut off points and color key).</p>
-<div id="threshold" class="section level3">
-<h3>Threshold</h3>
-<pre><code>## Area under the curve: 0.834</code></pre>
-<pre><code>##    threshold specificity sensitivity
-## 1 0.08387448   0.7292066   0.7910884</code></pre>
-<p>The AUC is 0.834 which is quite good since it’s closer to 1 than 0.5. The calculated threshold is 0.083 which aligns with the ROC curve from above.</p>
+<p>Smoker and non-smoker models had the mostly the same variables that where less statistically significant and of the same level of significance. They had a similar misclassifcation error rate as well. The AIC of model with smokers has a much smaller AIC than the model with non-smokers. This means that the data at smokers are a better fit at predicting Heart Disease than the data of non-smokers. So, whether someone smokes or doesn’t, has an effect on the predictive power of the model and may be a confounding variable. This paired with multicollinearity of smoking/nonsmoking variable may indicate multicollinearity.</p>
 </div>
 </div>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>
-<p>It is possible to build a predictive model of Heart Disease. We notice that when changing the data to control for different variables, we have a significant impact on certain variables compared to the full model. Most of the controlled data models had lower AICS than the full models. And these models also had more statistically insignificant variables. This means that among these given variables, variables were less predictive of Heart Disease. The variables that seem to have the greatest changes between models are RaceHispanic, Sleeptime ,Ages 30-34 ,and Ages 35-39. And other variables seem to have no impact across all models such as Ages 25-29 and Diabetic while pregnant. RaceOther and RaceWhite are all statistically insignificant in all models except the full models. This might mean that these variables have different effects in HeartDisease given other factors and may not be as strong predictors of Heart Disease as we believed.</p>
+<p>It is possible to build a predictive model of Heart Disease using logistic regression, we observed certain variables with higher significance when running logistic regression on the full model along with specific subsets of the model (ie. Smoke and Sex). We notice that when subsetting the data to control for different variables, we have a significant impact on certain variables compared to the full model. Most of the controlled data models had lower AICS than the full models. And these models also had more statistically insignificant variables. This means that amongst these given variables, variables were less predictive of Heart Disease. The variables that seem to have the greatest changes between models are RaceHispanic, Sleeptime, Ages 30-34, and Ages 35-39. And other variables seem to have no impact across all models such as Ages 25-29 and Diabetic while pregnant. RaceOther and RaceWhite are all statistically insignificant in all models except the full models. This might mean that these variables have different effects in HeartDisease given other factors and may not be as strong predictors of Heart Disease as we believed. The variables of the subsetted models had much more variables that were less predictive of heart disease.</p>
 </div>
 
 

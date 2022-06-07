@@ -22,13 +22,13 @@ output: html_document
 This is the website for our final project during the Spring Quarter of 2022 with Professor Furfaro.
 
 ## Contributors
-|Student         |Contributions                                    |
-|:---------------|:------------------------------------------------|
-|Lukas Barrett   |Compiling data, logistic regression, introduction|
-|Kaleem Ezatullah|Logistic regression, analysis                    |
-|Andrew Muench   |Logistic regression, analysis, introduction      |
-|Michelle Tsang  |ROC curve, website, introduction                 |
-|Connor Young    |kNN functions, analysis, ROC threshold           |
+|Student         |Contributions                                          |
+|:---------------|:------------------------------------------------------|
+|Lukas Barrett   |Logistic Regression, Data Preprocessing, Report Writing|
+|Kaleem Ezatullah|Logistic Regression, Analysis of Results               |
+|Andrew Muench   |Logistic Regression, Analysis of Results               |
+|Michelle Tsang  |Website, kNN                                           |
+|Connor Young    |kNN, EDA, Analysis of Report                           |
 
 </div>
 <div class="col-sm-6">

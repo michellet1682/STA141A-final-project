@@ -10,23 +10,188 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-We constructed a model with all the variables in the data to try to predict heart disease.  We also created models with data only from certain levels.  These levels were: Males removed, Females removed, Smokers removed, Non-smokers removed, people who had strokes removed and people who didn't have strokes removed.  We chose the variables of Sex, Smoking, and Strokes because we were curious whether the levels of these specific variables had any impact on predicting Heart Disease. First, we want to see which variables of each of these models were significant in prediciting heart disease and the overall effectiveness of the model.   
+## Correlation Function
+```{r, message=FALSE}
+library(ltm)
+library(psych)
+library(sjstats)
+
+
+correlation = function(var1, var2){
+  # check if variables are the same
+  if(var1 == var2){
+    return(1.0)
+  }
+  
+  var1.name = var1
+  var2.name = var2
+  
+  var1 = heart.df[[var1]]
+  var2 = heart.df[[var2]]
+  
+  # get whether variables are "factor" or "numeric"
+  var1.class = class(var1)
+  var2.class = class(var2)
+  
+  
+  # if var is "factor", determine what kind of factor, i.e. "binomial"
+  if(var1.class == "factor"){
+    if(length(levels(var1)) == 2){
+      var1.class = "binomial"
+    }
+  }
+  
+  if(var2.class == "factor"){
+    if(length(levels(var2)) == 2){
+      var2.class = "binomial"
+    }
+  }
+
+  # "numeric" & "numeric" correlation
+  if(var1.class == "numeric" & var2.class == "numeric"){
+    return(round(cor(var1, var2),2))
+  }
+  
+  # "numeric" & "binomial" correlation
+  if((var1.class == "numeric" & var2.class == "binomial") | (var1.class == "binomial" & var2.class == "numeric")){
+    # swap var1 and var2 so that var1 is "numeric"
+    if(var1.class == "binomial"){
+      temp = var1
+      temp.class = var1.class
+      var1 = var2
+      var1.class = var2.class
+      var2 = temp
+      var2.class = temp.class
+    }
+    
+    return(round(biserial.cor(var1, var2),2))
+  }
+  
+  # "numeric" & "factor"
+  if((var1.class == "numeric" & var2.class == "factor") | (var1.class == "factor" & var2.class == "numeric")){
+    # swap var1 and var2 so that var1 is "numeric"
+    if(var1.class == "factor"){
+      temp = var1
+      temp.class = var1.class
+      var1 = var2
+      var1.class = var2.class
+      var2 = temp
+      var2.class = temp.class
+    }
+    
+    anova = aov(var1 ~ var2)
+    return(round(summary(anova)[[1]][["Pr(>F)"]][1],2))
+  }
+  
+  # binomial & binomial
+  if(var1.class == "binomial" & var2.class == "binomial"){
+    freq_table = table(var1, var2)
+    return(round(phi(freq_table),2))
+  }
+  # binomial & factor
+  if((var1.class == "binomial" & var2.class == "factor") | (var1.class == "factor" & var2.class == "binomial")){
+    freq_table = table(var1, var2)
+    return(round(cramer(freq_table),2))
+  }
+  
+  # factor & factor
+  if(var1.class == "factor" & var2.class == "factor"){
+    freq_table = table(var1, var2)
+    return(round(cramer(freq_table),2))
+  }
+  
+  return(NA)
+}
+
+```
+
+### Correlation Matrix
+```{r, echo = FALSE, message=FALSE}
+#install.packages("reshape2")
+library(reshape2)
+library(ggplot2)
+correlations = numeric(18*18)
+
+variables = names(heart.df)
+index = 1
+for(var1 in variables){
+  for(var2 in variables){
+    correlations[index] = correlation(var1, var2)
+    index = index + 1
+  }
+}
+
+dimensions = ncol(heart.df)
+
+correlation_matrix = matrix(data = correlations, nrow=dimensions, ncol=dimensions, byrow=T)
+rownames(correlation_matrix) = variables
+colnames(correlation_matrix) = variables
+
+correlation_matrix[upper.tri(correlation_matrix)] = NA
+
+melted_cor_matrix = melt(correlation_matrix, na.rm=T)
+
+correlation_heatmap = ggplot(data=melted_cor_matrix, aes(x=Var1, y=Var2, fill=value))+
+  geom_tile(color="white")+
+  labs(title="Correlation Matrix", x="", y="", fill = "Correlation")+
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab")+
+  geom_text(aes(Var1, Var2, label = value), color = "black", size = 2.5)+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+correlation_heatmap
+```
+
+To attain a general understanding of how all the different variables relate to one another, we developed and executed a function that creates a correlation matrix for all of the variables. Due to the fact that we have several different types of variables (continuous, dichotomous, and non-dichotomous), we had to use several different types of correlation tests. For calculating the correlation between two continuous variables, we used Pearson's correlation coefficient. For calculating the correlation between a continuous variable and a dichotomous variable, we used the point-biserial correlation coefficient. For a continuous and non-dichotomous variable, we had to use a one-way ANOVA $\chi^2$ test to calculate a p-value to determine whether the variables are correlated. For the correlation between two dichotomous variables, we used the $\phi$ correlation coefficient. Lastly, for the correlation between a dichotomous and non-dichotomous variable and the correlation between two non-dichotomous variables, we used Cramer's V. 
+
+Based on our correlation matrix, we see that most of the variables have a weak or negligible correlation to the other variables. The exceptions to this is the correlation between DiffWalking and PhysicalHealth which has a low negative correlation of -0.43. These results indicate that we likely won't experience any problems with multicollinearity since none of the variables are highly correlated. Additionally, this correlation matrix indicates that AgeCategory has the strongest correlation with HeartDisease while the other variables have mostly negligible correlations. Thus, AgeCategory is likely to be a more powerful predictor of HeartDisease than other variables.
+
+## ROC Curve
+```{r, echo=FALSE}
+library(ROCR)
+logreg_full = glm(HeartDisease~., data=heart.training, family = "binomial")
+pred = predict(logreg_full,heart.test, type = "response")
+pred2 = prediction(pred, heart.test$HeartDisease)
+roc = performance(pred2, "tpr", "fpr")
+plot(roc, main = "ROC Curve", colorize = T, lwd = 2)
+```
+
+Based on the ROC curve above, we see that the supposed optimal threshold for our logistic models should be around 0.01.
+
+### Threshold
+```{r, echo=FALSE, message=FALSE}
+library(pROC)
+library(plotROC)
+predictions.df = data.frame(prediction = predict(logreg_full, newdata = heart.test, 
+                                                 type = "response"),
+                            truth = heart.test$HeartDisease,
+                            model = "test")
+roc.plot2 = roc(heart.test$HeartDisease, predictions.df$prediction, plot = F, print.auc = T)
+auc.plot = roc.plot2$auc
+auc.plot
+threshold = coords(roc.plot2, x="best")
+threshold
+```
+We calculated the AUC to be 0.834, which is quite good since it's decently close to 1. The calculated threshold is 0.083 which aligns with the ROC curve from above. However, we found that this threshold resulted in a misclassification rate of around 0.26. This is a very high error rate, and much higher than what results from a threshold of 0.5. Therefore, we will be using a threshold of 0.5, regardless of what the ROC curve suggests is optimal.
+
+## Constructing Model
+We constructed a full model with all the variables included to predict heart disease. We also created models with data only from certain levels removing the levels: Male, Female, Smoke, and No Smoke.  We chose the variables of Sex and Smoking because we were curious whether these particular levels had any impact on predicting Heart Disease. First, we want to see which variables of each of these models were significant in predicting heart disease and the overall effectiveness of the model.  
 
 ## Full Model
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(regclass)
 log.reg.full <- glm(HeartDisease ~ .-1, data = heart.training, family = "binomial")
 summary(log.reg.full)
 anova.full <- anova(log.reg.full, test='Chisq')
-AIC(log.reg.full)
-BIC(log.reg.full)
 confusion_misclass(heart.test,log.reg.full, conf_mat = T)
+VIF(log.reg.full)
 ```
 
-The variables that are not statistically significant are AgeCategory 25-29, RaceOther, and RaceWhite of the significance level is at 0.1. The variable that is not statistically significant if the significance level is 0.05 DiabeticYes (during pregnancy). The variable that isn't statistically significant if the significance level is 0.001 is RaceHispanic. The misclassification rate is 0.08330727 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.  
-
+The variables that are not statistically significant are AgeCategory 25-29, RaceOther, and RaceWhite of the significance level is at 0.1. The variable that is not statistically significant if the significance level is 0.05 DiabeticYes (during pregnancy). The variable that isn't statistically significant if the significance level is 0.001 is RaceHispanic. The misclassification rate is 0.08330727 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
 
 ## Males removed
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 male.indexes.training <- c()
 male.indexes.test <- c()
 for ( i in 1:nrow(heart.training)){
@@ -45,18 +210,16 @@ no.male.test.df <- heart.df[-male.indexes.test,]
 no.male.test.df <- no.male.test.df[,-c(9)]
 
 log.reg.no.male <- glm(HeartDisease ~ .-1, data = no.male.training.df, family = "binomial")
-summary(log.reg.no.male)
-anova.no.male <- anova(log.reg.no.male, test='Chisq')
-AIC(log.reg.no.male)
-BIC(log.reg.no.male)
+summary.no.male <- summary(log.reg.no.male)
+summary.no.male$coefficients[c(1,9,10,18,19,20,21,24,26),]
+VIF(log.reg.no.male)
 confusion_misclass(no.male.test.df,log.reg.no.male, conf_mat = T)
 ```
 
-The variables that are not statistically significant are AgeCategory25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy).  Sleep time and Race Hispanic are statistically significant only if the significance level is 0.01. Ages 35-39 is statistically significant only if the significance level is 0.001.The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.   
-
+The variables that are not statistically significant are RaceHispanic, Race Other, and Diabetic Yes (during pregnancy). Sleep time is statistically significant only if the significance level is 0.001. AgeCategory 25-29 and RaceBlack are statistically significant only if the level of significance is 0.05. RaceWhite and BMI are statistically significant only if the significance level is 0.01.  SleepTime and Ages30-34 are statistically signifcant only if the level of significance is 0.001. The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.   
 
 ## Females Removed
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 female.indexes.training <- c()
 female.indexes.test <- c()
 for ( i in 1:nrow(heart.training)){
@@ -75,17 +238,16 @@ no.female.test.df <- heart.df[-female.indexes.test,]
 no.female.test.df <- no.female.test.df[,-c(9)]
 
 log.reg.no.female <- glm(HeartDisease ~ .-1, data = no.female.training.df, family = "binomial")
-summary(log.reg.no.female)
-anova.no.female <- anova(log.reg.no.female, test='Chisq')
-AIC(log.reg.no.female)
-BIC(log.reg.no.female)
+summary.no.female <- summary(log.reg.no.female)
+summary.no.female$coefficients[c(9,11,19,20,21,24,26),]
+VIF(log.reg.no.female)
 confusion_misclass(no.female.test.df,log.reg.no.female, conf_mat = T)
 ```
 
-The variables that are not statistically significant are RaceHispanic, Race Other, and Diabetic Yes (during pregnancy). Sleep time is statistically significant only if the significance level is 0.001.AgeCategory 25-29 and RaceBlack are statistically significant only if the level of significance is 0.05. RaceWhite and BMI are statistically significant only if the significance level is 0.01.  Sleept time and Ages30-34 are statistically signifcant only if the level of significance is 0.001. The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
+The variables that are not statistically significant are AgeCategory25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy).  Sleep time and Race Hispanic are statistically significant only if the significance level is 0.01. Ages 35-39 is statistically significant only if the significance level is 0.001. The misclassification rate is 0.08456932 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary. 
 
 ## Smoker
-```{r, echo=FALSE}
+```{r, echo=FALSE,message=FALSE, warning=FALSE}
 smoker.indexes.training <- c()
 smoker.indexes.test <- c()
 for ( i in 1:nrow(heart.training)){
@@ -105,17 +267,16 @@ smoker.test.df <- heart.df[-smoker.indexes.test,]
 smoker.test.df <- smoker.test.df[,-c(3)]
 
 log.reg.smoker <- glm(HeartDisease ~ .-1, data = smoker.training.df, family = "binomial")
-summary(log.reg.smoker)
-anova.smoker<- anova(log.reg.smoker, test='Chisq')
-AIC(log.reg.smoker)
-BIC(log.reg.smoker)
+summary.no.smoker <- summary(log.reg.smoker)
+summary.no.smoker$coefficients[c(7,9,19,20,21,24),]
+VIF(log.reg.smoker)
 confusion_misclass(smoker.test.df,log.reg.smoker, conf_mat = T)
 ```
 
-The variables that are not statistically significant are BMI, AgeCategory 25-29, RaceOther, RaceWhite, and Diabetic Yes(during pregnancy) is the level of significance is 0.1. Sleeptime is only statistically significant if the level of significance is 0.05.  AgeCategory30-34 and RaceHispanic is statistically significant only if the significance level is 0.001.The misclassification rate is 0.08473544 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
+The variables that are not statistically significant are BMI, AgeCategory 25-29, RaceOther, RaceWhite, and Diabetic Yes(during pregnancy) is the level of significance is 0.1. SleepTime is only statistically significant if the level of significance is 0.05.  AgeCategory30-34 and RaceHispanic is statistically significant only if the significance level is 0.001.The misclassification rate is 0.08473544 which means that the model is fairly accurate. BMI, AlcoholDrinking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary. 
 
 ## Non-Smoker
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 non.smoker.indexes.training <- c()
 non.smoker.indexes.test <- c()
 for ( i in 1:nrow(heart.training)){
@@ -135,75 +296,13 @@ non.smoker.test.df <- heart.df[-non.smoker.indexes.test,]
 non.smoker.test.df <- non.smoker.test.df[,-c(3)]
 
 log.reg.non.smoker <- glm(HeartDisease ~ .-1, data = non.smoker.training.df, family = "binomial")
-summary(log.reg.non.smoker)
-anova.non.smoker<- anova(log.reg.non.smoker, test='Chisq')
-AIC(log.reg.non.smoker)
-BIC(log.reg.non.smoker)
-
+non.smoker.removed.summary <- summary(log.reg.non.smoker)
+non.smoker.removed.summary$coefficients[c(8,9,18,19,20,23,25),]
+VIF(log.reg.non.smoker)
 confusion_misclass(non.smoker.test.df,log.reg.non.smoker, conf_mat = T)
 ```
 
-The variables that are not statistically significant are AgeCategory 25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy) if the level of significance is 0.1. MentalHealth and RaceHispanic are statistically significant if the level of significance is 0.01.  The misclassification rate is 0.08475112 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
-
-## Stroke
-```{r, echo=FALSE}
-stroke.indexes.training <- c()
-stroke.indexes.test <- c()
-for ( i in 1:nrow(heart.training)){
-  if(heart.training[i,5]== "Yes"){
-    stroke.indexes.training <- append(stroke.indexes.training,i)
-  }
-}
-for ( i in 1:nrow(heart.test)){
-  if(heart.test[i,5]== "Yes"){
-    stroke.indexes.test <- append(stroke.indexes.test,i)
-  }
-}
-
-stroke.training.df <- heart.df[-stroke.indexes.training,]
-stroke.training.df <- stroke.training.df[,-c(5)]
-stroke.test.df <- heart.df[-stroke.indexes.test,]
-stroke.test.df <- stroke.test.df[,-c(5)]
-
-log.reg.stroke <- glm(HeartDisease ~ .-1, data = stroke.training.df, family = "binomial")
-summary(log.reg.stroke)
-anova.stroke<- anova(log.reg.stroke, test='Chisq')
-AIC(log.reg.stroke)
-BIC(log.reg.stroke)
-confusion_misclass(stroke.test.df,log.reg.stroke, conf_mat = T)
-```
-
-The variables that are not statistically significant are AgeCategory 25-29 and Hispanic if the level of significance is 0.1.  BMI and RaceWhite are only statistically significant if the level of significance is 0.05.  Sleeptime is only statistically significant if the level of significance 0.001.  The misclassification rate is 0.08525729 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
-
-## Non-Stroke
-```{r, echo=FALSE}
-non.stroke.indexes.training <- c()
-non.stroke.indexes.test <- c()
-for ( i in 1:nrow(heart.training)){
-  if(heart.training[i,5]== "No"){
-    non.stroke.indexes.training <- append(non.stroke.indexes.training,i)
-  }
-}
-for ( i in 1:nrow(heart.test)){
-  if(heart.test[i,5]== "No"){
-    non.stroke.indexes.test <- append(non.stroke.indexes.test,i)
-  }
-}
-
-non.stroke.training.df <- heart.df[-non.stroke.indexes.training,]
-non.stroke.training.df <- non.stroke.training.df[,-c(5)]
-non.stroke.test.df <- heart.df[-non.stroke.indexes.test,]
-non.stroke.test.df <- non.stroke.test.df[,-c(5)]
-
-log.reg.non.stroke <- glm(HeartDisease ~ .-1, data = non.stroke.training.df, family = "binomial")
-summary(log.reg.non.stroke)
-anova.non.stroke<- anova(log.reg.non.stroke, test='Chisq')
-AIC(log.reg.non.stroke)
-BIC(log.reg.non.stroke)
-confusion_misclass(non.stroke.test.df,log.reg.non.stroke, conf_mat = T)
-```
-
-The variables that are not statistically significant are BMI, AgeCategory 25-29, AgeCategory 30-34, AgeCategory 35-39, RaceOther and sleeptime if the level of significance is 0.1. Hispanic, RaceWhite, DiabeticYes (during pregnancy), PhysicallyActiveYes are statistically significant if the level of significance is 0.01. AlcoholDrinkingYes and RaceBlack are not statistically significant if the level of significance is 0.001. The misclassification rate is 0.08538408 which means that the model is fairly accurate. BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
+The variables that are not statistically significant are AgeCategory 25-29, RaceOther, RaceWhite, and DiabeticYes (during pregnancy) if the level of significance is 0.1. MentalHealth and RaceHispanic are statistically significant if the level of significance is 0.01. The misclassification rate is 0.08475112 which means that the model is fairly accurate. BMI, AlcoholDrinking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 meaning no action to amend the collinearity is necessary.
 
 ## Findings
 All models were effective at predicting Heart Disease with different variables being statistically significant at different levels.
@@ -211,43 +310,14 @@ All models were effective at predicting Heart Disease with different variables b
 But which models where the best at predicting Heart Disease?  And how did the statistical significance of variables change between the models? How do naturally paired models compare to each other.
 
 ### Compare all models
-The misclassification error rates only had slight differences between the all the models and all were similarly effective at prediction.  Also when comparing AIC, the order of largest to smallest AIC's are log.reg.stroke, log.reg.full, log.reg.non.stroke, log.reg.smoker,log.reg.no.female,log.reg.no.male, and log.reg.non.smoker. This means that  the model where the non smokers were removed from the data set had the best fit model by AIC.  This doesn't mean that we recommend the data set remove all non-smokers from their data sets, but rather that a model with all smokers have the most explanatory power when trying to model predictor variables and heart disease.  It seems that whether people are smoking or not effects the model greatly according to AIC. The full model has one of the highest AIC's compared to the other models which might indicate that the model predictor variables might be confounding variables.  As when only giving data from a certain level improves the predictive power of the model.  But, in the Full model, there are less variables that are statistically insignificant.  
+The Misclassification error rates only had slight differences between the all the models and all were similarly effective at prediction.  Also when comparing AIC, the order of largest to smallest AIC's are log.reg.stroke, log.reg.full, log.reg.non.stroke, log.reg.smoker,log.reg.no.female,log.reg.no.male, and log.reg.non.smoker. This means that  the model where the non smokers were removed from the data set had the best fit model by AIC.  This doesn't mean that we reccomend the data set remove all non-smokers from their data sets, but rather that a model with all smokers have the most explanatory power when trying to model predictor variables and heart disease.  It seems that whether people are smoking or not effects the model greatly according to AIC. The full model has one of the highest AIC's compared to the other models which might indicate that the model predictor variables might be confounding variables.  As when only giving data from a certain level improves the predictive power of the model.  But, in the Full model, there are less variables that are statistically insignificant.  
 
 When comparing the different variables's statistical significance when predicting Heart Disease many of the variables have had a lot of consistency.  Most variables remain statistically significant abnd do not deviate between the models.  Certain notable changes are as follows.  Ages25-29, RaceOther, RaceWhite,DiabeticYes (while pregnant) and BMI consistently have really low statistical significance across all models.  RaceHispanic, Sleeptime ,Ages 30-34 ,and Ages 35-39 intermittenly lose very high statistical significance. MentalHealth only loses statistical significance in the non-smoker only model.  Alcohol drinking loses statistical significance in the non-stroke model only. PhysicalActiveYes loses statistical significance in the non-stroke only model.  BMI, Smoking, and SleepTime are the variables with the highest multicollinearity, but they are still lower than 5 or 10 across all models.  
 
 ### Compare pairs of models
 Males and Female models had similar AIC's and had the mostly the same variables that where less statistically significant and of the same level of significance.  They had a similar misclassifcation error rate as well. The models of the two sexes do not vary much from each other meaning their predictive power when looking at development of heart disease is roughly equal.  
 
-Smoker and non-smoker models had the mostly the same variables that where less statistically significant and of the same level of significance.  They had a similar misclassifcation error rate as well. The AIC of model with smokers has a much smaller AIC than the model with non-smokers.  This means that the data at smokers are a better fit at predicting Heart Disease than the data of non-smokers.  So, whether someone smokes or doesn't, has an effect on the predictive power of the model and may be a confounding variable. This paired with multicollineratiy of smoking/nonsmoking variable may indicate multicollinearity.
-
-Stroke and non-stroke models had very close AIC's. They had a similar misclassifcation error rate.  The Stroke only model had much fewer statistically insignificant variables than the non-stroke only model. This means that more predictor variables under non-stroke only model are much less predictive of Heart Disease. This might indicate that people who did not have strokes are at less risk of Heart Disease as they have less factors that predict heart disease.
-
-
-## ROC Curve
-```{r, echo=FALSE}
-library(ROCR)
-pred = predict(logreg_full,heart.test, type = "response")
-pred2 = prediction(pred, heart.test$HeartDisease)
-roc = performance(pred2, "tpr", "fpr")
-plot(roc, main = "ROC Curve", print.cutoffs.at = seq(0.1, 0.9, 0.1), colorize = T, lwd = 2)
-```
-There are some threshold cut off points graphed above. By eyeballing the graph, we can see that the threshold is somewhere in the dark blue region since that is closest to 1 on for the true positive rate. The threshold will be somewhere around 0.1 (based on the one of the cut off points and color key).
-
-### Threshold
-```{r, echo=FALSE, message=FALSE}
-library(pROC)
-library(plotROC)
-predictions.df = data.frame(prediction = predict(logreg_full, newdata = heart.test, 
-                                                 type = "response"),
-                            truth = heart.test$HeartDisease,
-                            model = "test")
-roc.plot2 = roc(heart.test$HeartDisease, predictions.df$prediction, plot = F, print.auc = T)
-auc.plot = roc.plot2$auc
-auc.plot
-threshold = coords(roc.plot2, x="best")
-threshold
-```
-The AUC is 0.834 which is quite good since it's closer to 1 than 0.5. The calculated threshold is 0.083 which aligns with the ROC curve from above. 
+Smoker and non-smoker models had the mostly the same variables that where less statistically significant and of the same level of significance.  They had a similar misclassifcation error rate as well. The AIC of model with smokers has a much smaller AIC than the model with non-smokers.  This means that the data at smokers are a better fit at predicting Heart Disease than the data of non-smokers.  So, whether someone smokes or doesn't, has an effect on the predictive power of the model and may be a confounding variable. This paired with multicollinearity of smoking/nonsmoking variable may indicate multicollinearity.
 
 ## Conclusion
-It is possible to build a predictive model of Heart Disease. We notice that when changing the data to control for different variables, we have a significant impact on certain variables compared to the full model. Most of the controlled data models had lower AICS than the full models. And these models also had more statistically insignificant variables. This means that among these given variables, variables were less predictive of Heart Disease. The variables that seem to have the greatest changes between models are RaceHispanic, Sleeptime ,Ages 30-34 ,and Ages 35-39. And other variables seem to have no impact across all models such as Ages 25-29 and Diabetic while pregnant. RaceOther and RaceWhite are all statistically insignificant in all models except the full models. This might mean that these variables have different effects in HeartDisease given other factors and may not be as strong predictors of Heart Disease as we believed.
+It is possible to build a predictive model of Heart Disease using logistic regression, we observed certain variables with higher significance when running logistic regression on the full model along with specific subsets of the model (ie. Smoke and Sex). We notice that when subsetting the data to control for different variables, we have a significant impact on certain variables compared to the full model. Most of the controlled data models had lower AICS than the full models. And these models also had more statistically insignificant variables. This means that amongst these given variables, variables were less predictive of Heart Disease. The variables that seem to have the greatest changes between models are RaceHispanic, Sleeptime, Ages 30-34, and Ages 35-39. And other variables seem to have no impact across all models such as Ages 25-29 and Diabetic while pregnant. RaceOther and RaceWhite are all statistically insignificant in all models except the full models. This might mean that these variables have different effects in HeartDisease given other factors and may not be as strong predictors of Heart Disease as we believed. The variables of the subsetted models had much more variables that were less predictive of heart disease.
