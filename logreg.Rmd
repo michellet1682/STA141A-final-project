@@ -106,7 +106,7 @@ correlation = function(var1, var2){
 ```
 
 ### Correlation Matrix
-```{r, echo = FALSE, message=FALSE}
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
 #install.packages("reshape2")
 library(reshape2)
 library(ggplot2)
